@@ -1,0 +1,118 @@
+body {
+  /* background-image: url("virus2.png");
+    background-size: cover;
+    background-position: center;
+    height: 100vh; */
+  /* margin: 0; */
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  color: greenyellow;
+  background-color: grey;
+}
+
+.hide {
+  display: none;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.startPageTitle1 {
+  text-align: center;
+  font-size: 70px;
+}
+
+.startPageTitle2 {
+  text-align: center;
+  font-size: 20px;
+}
+
+.startPageForm {
+  text-align: center;
+  margin-top: 15%;
+}
+
+.lobby {
+  width: 100%;
+  text-align: center;
+  margin-top: 15%;
+  justify-content: center;
+}
+
+.pastScores {
+  display: flex;
+  justify-content: center;
+  margin-top: 50px;
+}
+
+.highScore {
+  margin-right: 20px;
+}
+
+.pastGames {
+  margin-left: 20px;
+}
+
+.game-field {
+  display: flex;
+  justify-content: center;
+  /* height: 100vh;*/
+  margin-top: 30px;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: 20% 20% 20% 20% 20%;
+  grid-template-rows: 20% 20% 20% 20% 20%;
+  width: 70vw;
+  height: 70vh;
+}
+
+.grid-item {
+  background-color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imgVirus {
+  width: 50%;
+  height: auto;
+}
+
+.time {
+  /* display: flex; */
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+}
+
+.score {
+  width: 30vh;
+  margin-left: 20px;
+  text-align: center;
+  font-size: 20px;
+  box-sizing: border-box;
+}
+
+.scorePlayer1 {
+  background-color: rgba(211, 211, 211, 0.5);
+  padding: 5px;
+  margin: 2px;
+}
+
+.scorePlayer2 {
+  background-color: rgba(211, 211, 211, 0.5);
+  padding: 5px;
+  margin: 2px;
+}
