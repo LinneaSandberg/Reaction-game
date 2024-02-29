@@ -7,6 +7,56 @@ import "./assets/scss/style.scss";
 
 const SOCKET_HOST = import.meta.env.VITE_SOCKET_HOST;
 
+const gridItems = document.querySelectorAll(".grid-item") as NodeListOf<Element>;
+const virus = document.querySelector(".virus") as HTMLDivElement;
+const timeLeft = document.querySelector("#time-left") as HTMLDivElement;
+const score = document.querySelector(".score") as HTMLDivElement;
+
+let result = 0;
+
+function shuffleArray(array: Element[]): Element[] {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function randomSquare() {
+    // Remove "virus" class from all squares
+    gridItems.forEach((gridItem) => {
+        gridItem.classList.remove("virus");
+    });
+
+    // Shuffle the array of grid items
+    const shuffledGridItems = shuffleArray(Array.from(gridItems));
+    
+    // Add "virus" class to the first item of the shuffled array
+    shuffledGridItems[0].classList.add("virus");
+}
+
+function moveVirus() {
+	randomSquare();
+	const delay = Math.random() * 10000;
+	setTimeout(moveVirus, delay);
+	console.log(delay);
+}
+moveVirus();
+
+
+// Add event listener to each grid item to remove virus on click.
+gridItems.forEach((gridItem) => {
+	gridItem.addEventListener("mousedown", () => {
+		if (gridItem.classList.contains("virus")) {
+			gridItem.classList.remove("virus");
+			console.log("Virus hit!💥");
+			/* result++;
+			score.textContent += `${result}`; */
+		}
+	});
+});
+
+
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(SOCKET_HOST);

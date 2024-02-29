@@ -73,8 +73,9 @@ li {
   display: grid;
   grid-template-columns: 20% 20% 20% 20% 20%;
   grid-template-rows: 20% 20% 20% 20% 20%;
-  width: 70vw;
+  width: 70vh;
   height: 70vh;
+  border: 1px solid black;
 }
 
 .grid-item {
@@ -83,6 +84,7 @@ li {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid black;
 }
 
 .imgVirus {
@@ -115,4 +117,9 @@ li {
   background-color: rgba(211, 211, 211, 0.5);
   padding: 5px;
   margin: 2px;
+}
+
+.virus {
+  background-image: url("/src/assets/images/virus.png");
+  background-size: cover;
 }
