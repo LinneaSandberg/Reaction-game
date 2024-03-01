@@ -12,12 +12,13 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
     // playerJoinRequest: (username: string, callback: (success: boolean) => void) => void;
     roomForPlayers: (callback: (rooms: Room[]) => void) => void;
-    playerJoinRequest: (request: PlayerJoinRequest, callback: (response: PlayerJoinResponse) => void) => void;
+    playerJoinRequest: (username: string, callback: (response: PlayerJoinResponse) => void) => void;
 }
 
-export interface PlayerJoinRequest {
-    username: string;
-}
+// export interface PlayerJoinRequest {
+//     username: string;
+//     highScore: number;
+// }
 
 export interface PlayerJoinResponse {
     success: boolean;

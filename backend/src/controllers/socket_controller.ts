@@ -3,7 +3,7 @@
  */
 import Debug from "debug";
 import { Server, Socket } from "socket.io";
-import { ClientToServerEvents, PlayerJoinRequest, ServerToClientEvents, WaitingPlayers } from "@shared/types/SocketTypes";
+import { ClientToServerEvents, ServerToClientEvents, WaitingPlayers } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 
 // Create a new debug instance
@@ -20,24 +20,38 @@ export const handleConnection = (
 ) => {
 	debug("A player got connected 🏁", socket.id);
 
-	// Listen for room list request
-	socket.on("roomForPlayers", async (callback) => {
-		debug("Got request for rooms!");
+	// // Listen for room list request
+	// socket.on("roomForPlayers", async (callback) => {
+	// 	debug("Got request for rooms!");
 
 
-		// Här ska vi skriva logik för att queria databasen och få ut rum, frågan är då om vi ska ha skapa en massa rum eller om rummet skall skapas när det är två användare som är där?
-	});
+	// 	// Här ska vi skriva logik för att queria databasen och få ut rum, frågan är då om vi ska ha skapa en massa rum eller om rummet skall skapas när det är två användare som är där?
+	// });
 
 
 
 	// Listen for player join request
-	socket.on("playerJoinRequest", (request: PlayerJoinRequest) => {
+	socket.on("playerJoinRequest", async (username: string) => {
 		debug("Player %s want's to join the game!", socket.id);
 
+		// const player = await prisma.player.findMany();
+
+		// console.log("our players: ", player);
+
+
+		const player = await prisma.player.create({
+			data: {
+				id: socket.id,
+				username,
+			},
+		});
+		debug("Player created: ", player);
+
+		
 		waitingPlayers.push({
 			players: {
 				playerId: socket.id,
-				username: request.username,
+				username: username,
 			},
 			socketId: socket.id,
 		});
@@ -53,6 +67,7 @@ export const handleConnection = (
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", { message: "waiting for another player to join!" });
 		}
+	
 
 		// callback({
 		// 	success: true

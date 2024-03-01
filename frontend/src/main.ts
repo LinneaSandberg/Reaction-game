@@ -1,7 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import {
 	ClientToServerEvents,
-	PlayerJoinRequest,
 	RoomCreatedEvent,
 	ServerToClientEvents,
 	WaitingForPlayersEvent,
@@ -119,10 +118,13 @@ socket.io.on("reconnect", () => {
 
 // Create varible for username
 let username: string | null = null;
+let highScore = 0;
 
 // add eventlistner listening for when the form-username is submitted
 startPageFormEl.addEventListener("submit", (e) => {
 	e.preventDefault();
+
+	console.log("It works to click the button!");
 
 	// Trim the input-value
 	const trimmedUsername = usernameInputEl.value.trim();
@@ -135,8 +137,11 @@ startPageFormEl.addEventListener("submit", (e) => {
 	// set username
 	username = trimmedUsername;
 
+
+
+
 	// Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-	socket.emit("playerJoinRequest", { username }, (response) => {
+	socket.emit("playerJoinRequest", username, (response) => {
 		if (response.success) {
 			console.log("Player joined successfully!");
 		} else {
