@@ -1,7 +1,10 @@
 import { io, Socket } from "socket.io-client";
 import {
 	ClientToServerEvents,
+	PlayerJoinRequest,
+	RoomCreatedEvent,
 	ServerToClientEvents,
+	WaitingForPlayersEvent,
 } from "@shared/types/SocketTypes";
 import "./assets/scss/style.scss";
 
@@ -11,6 +14,17 @@ const gridItems = document.querySelectorAll(".grid-item") as NodeListOf<Element>
 const virus = document.querySelector(".virus") as HTMLDivElement;
 const timeLeft = document.querySelector("#time-left") as HTMLDivElement;
 const score = document.querySelector(".score") as HTMLDivElement;
+
+// display or no-display
+const startPageEl = document.querySelector("#startPage") as HTMLElement;
+const lobbyPageEl = document.querySelector("#lobbyPage") as HTMLElement;
+const gamePageEl = document.querySelector("#gamePage") as HTMLElement;
+
+
+
+// start game 
+const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElement;
+const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
 
 let result = 0;
 
@@ -56,6 +70,31 @@ gridItems.forEach((gridItem) => {
 	});
 });
 
+// Show waiting room
+const showWaitingRoom = () => {
+	startPageEl.classList.add("hide");
+	lobbyPageEl.classList.remove("hide");
+}
+
+const showGameRoom = () => {
+	gamePageEl.classList.remove("hide");
+	lobbyPageEl.classList.add("hide");
+}
+
+/*
+
+const handlePlayerJoinRequestCallback = (response: PlayerJoinRequest) => {
+	console.log("Join was successfull", response);
+
+	if (!response.success) {
+		alert("could not join the room");
+		return;
+	}
+
+	showWaitingRoom();
+}
+*/
+
 
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
@@ -78,15 +117,11 @@ socket.io.on("reconnect", () => {
 	console.log("🔗 Socket ID:", socket.id);
 });
 
-// Create a DOM-refernce for the submit input as HTMLInputElement
-const usernameFormEl = document.querySelector(".app") as HTMLFormElement;
-const usernameInputEl = document.querySelector(".app") as HTMLInputElement;
-
 // Create varible for username
 let username: string | null = null;
 
 // add eventlistner listening for when the form-username is submitted
-usernameFormEl.addEventListener("submit", (e) => {
+startPageFormEl.addEventListener("submit", (e) => {
 	e.preventDefault();
 
 	// Trim the input-value
@@ -100,18 +135,29 @@ usernameFormEl.addEventListener("submit", (e) => {
 	// set username
 	username = trimmedUsername;
 
-	// Emit `userJoinRequest`-event to the server and wait for acknowledgement
-	socket.emit("playerJoinRequest", username, (success) => {
-		console.log("Player were able to join!", username, (success));
-
-		if (!success) {
-			alert("You can't join!");
-			return;
+	// Emit `playerJoinRequest`-event to the server and wait for acknowledgement
+	socket.emit("playerJoinRequest", { username }, (response) => {
+		if (response.success) {
+			console.log("Player joined successfully!");
+		} else {
+			console.error("Player join failed!");
 		}
+	});
+	console.log("Emitted 'playerJoinRequest' event to server", username);
 
-		// Here we call for function that shows player the "waiting to play-room"
+	// function to display the waiting-lobby
+	showWaitingRoom();
 
+
+	socket.on("roomCreated", (event: RoomCreatedEvent) => {
+		console.log("Room created: ", event.roomId, "With players: ", event.players);
+
+		// function to display the game-room
+		showGameRoom();
 	});
 
-	console.log("Emitted 'playerJoinRequest' event to server", username);
+	socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
+		console.log(event.message);
+	})
+
 });

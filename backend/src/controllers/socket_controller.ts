@@ -3,11 +3,15 @@
  */
 import Debug from "debug";
 import { Server, Socket } from "socket.io";
-import { ClientToServerEvents, ServerToClientEvents } from "@shared/types/SocketTypes";
+import { ClientToServerEvents, PlayerJoinRequest, ServerToClientEvents, WaitingPlayers } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 
 // Create a new debug instance
 const debug = Debug("backend:socket_controller");
+
+// array of players waiting to play
+const waitingPlayers: WaitingPlayers[] = [];
+
 
 // Handle a user connecting
 export const handleConnection = (
@@ -27,13 +31,32 @@ export const handleConnection = (
 
 
 	// Listen for player join request
-	socket.on("playerJoinRequest", (username, callback) => {
-		debug("Player %s want's to join the game!", username);
+	socket.on("playerJoinRequest", (request: PlayerJoinRequest) => {
+		debug("Player %s want's to join the game!", socket.id);
 
+		waitingPlayers.push({
+			players: {
+				playerId: socket.id,
+				username: request.username,
+			},
+			socketId: socket.id,
+		});
 
-		// here we will alöways let the to waining room and then in to the game if there is to users
-		// so now we just let the player in!
-		callback(true);
+		if (waitingPlayers.length >= 2) {
+			const playersInRoom = waitingPlayers.splice(0, 2);
+
+			const roomId = `room_${Date.now()}`;
+
+			playersInRoom.forEach((player) => {
+				io.to(player.socketId).emit("roomCreated", { roomId, players: playersInRoom.map(p => p.players) });
+			});
+		} else {
+			io.to(socket.id).emit("waitingForPlayer", { message: "waiting for another player to join!" });
+		}
+
+		// callback({
+		// 	success: true
+		// });
 	});
 
 
@@ -41,6 +64,11 @@ export const handleConnection = (
 	// handler for disconnecting
 	socket.on("disconnect", () => {
 		debug("A Player disconnected", socket.id);
+
+		const index = waitingPlayers.findIndex((player) => player.socketId === socket.id);
+		if (index !== -1) {
+			waitingPlayers.splice(index, 1);
+		}
 	});
 
 }
