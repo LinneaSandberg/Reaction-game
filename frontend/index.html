@@ -13,7 +13,7 @@
   <body>
     <div id="app"></div>
     <!-- Start page -->
-    <section>
+    <section class="hide">
       <form class="startPageForm">
         <h1 class="startPageTitle1">Kill the virus!</h1>
         <h2 class="startPageTitle2">Type in your name and start the game</h2>
@@ -54,15 +54,15 @@
 
     <!-- Game page -->
 
-    <section class="hide">
+    <section>
       <!-- Timer -->
-      <div class="time hide">
+      <!-- <div class="time hide">
         <h2>Timer: 00:15:468</h2>
       </div>
 
       <div class="time hide">
         <h2>Waiting for player to join</h2>
-      </div>
+      </div> -->
 
       <!-- temporary start game button-->
       <!-- <button class="start-game">Start game</button> -->
@@ -103,13 +103,15 @@
           <div class="scorePlayer1">
             <h3>Player 1</h3>
             <h4>7 p</h4>
-            <h4>Reaction time: 00:13:551</h4>
+            <h4 class="timer"></h4>
+            <h4 class="highscore"></h4>
           </div>
           <div class="scorePlayer2">
             <h3>Player 2</h3>
             <h4>5 p</h4>
-            <h4>Reaction time: 00:15:072</h4>
           </div>
+          <button class="startTimer">Start Timer</button>
+          <button class="stopTimer">Stop Timer</button>
         </div>
       </div>
     </section>
