@@ -9,15 +9,15 @@ async function main() {
         },
     });
 
-    // Now `game.id` contains a valid MongoDB ObjectID that can be used for Player
-    const player1 = await prisma.player.create({
-        data: {
-            username: 'PlayerOne',
-            gameId: game.id, // Use the generated ID from the Game
-        },
-    });
+    // // Now `game.id` contains a valid MongoDB ObjectID that can be used for Player
+    // const player1 = await prisma.player.create({
+    //     data: {
+    //         username: 'PlayerOne',
+    //         id: Socket.id
+    //     },
+    // });
 
-    console.log('Player created: ', player1);
+    // console.log('Player created: ', player1);
 }
 
 

@@ -2,9 +2,11 @@ export {}
 
 
 export interface Room {
-    id: string;
-    name: string;
-    winnerId: string;
-    createdAt: number;
-    completedAt: number;
+    roomId: string;
+    players: Player[];
+}
+
+export interface Player {
+    playerId: string;
+    username: string;
 }
