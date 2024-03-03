@@ -134,7 +134,7 @@ startPageFormEl.addEventListener("submit", (e) => {
 
 
 	// Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-	socket.emit("playerJoinRequest", username, (response) => {
+socket.emit("playerJoinRequest", username, (response) => {
 		if (response.success) {
 			console.log("Player joined successfully!");
 		} else {
@@ -147,7 +147,7 @@ startPageFormEl.addEventListener("submit", (e) => {
 	showWaitingRoom();
 
 
-	socket.on("roomCreated", (event: RoomCreatedEvent) => {
+socket.on("roomCreated", (event: RoomCreatedEvent) => {
 		console.log("Room created: ", event.roomId, "With players: ", event.players);
 
 		const opponent = event.players.find(player => player.username !== username)?.username;
@@ -160,7 +160,7 @@ startPageFormEl.addEventListener("submit", (e) => {
 
 	});
 
-	socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
+socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
 		console.log(event.message);
 	})
 
@@ -182,11 +182,13 @@ socket.on("virusPosition", (position) => {
 });
 
 //Add event listener to each grid item to remove virus on click.
+
 gridItems.forEach((gridItem) => {
 	gridItem.addEventListener("mousedown", () => {
 		if (gridItem.classList.contains("virus")) {
 			gridItem.classList.remove("virus");
 			console.log("Virus hit!💥");
+			socket.emit("hitVirus"); //Denna gör att "hit" skickas till servern MEN tas bort för båda.
 			/* result++;
 			score.textContent += `${result}`; */
 		}
