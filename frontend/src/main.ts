@@ -26,6 +26,8 @@ const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElem
 const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
 
 let result = 0;
+let timer;
+let startTime = 0;
 
 function shuffleArray(array: Element[]): Element[] {
     for (let i = array.length - 1; i > 0; i--) {
@@ -53,8 +55,24 @@ function moveVirus() {
 	const delay = Math.random() * 10000;
 	setTimeout(moveVirus, delay);
 	console.log(delay);
+
+	startTime = new Date().getTime();
+	timer = setInterval(updateTimer, 10);
 }
 moveVirus();
+
+const updateTimer = () => {
+
+	const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+	const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+
+
+
+	const currentTime = new Date().getTime();
+	const passedTime = currentTime - startTime;
+
+	
+}
 
 
 // Add event listener to each grid item to remove virus on click.
