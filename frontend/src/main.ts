@@ -80,6 +80,15 @@ const showGameRoom = () => {
 	lobbyPageEl.classList.add("hide");
 }
 
+// insert usersnames to results
+const usernamesDisplay = (username: string, opponent: string) => {
+	const player1 = document.querySelector("#player1") as HTMLHeadingElement;
+	const player2 = document.querySelector("#player2") as HTMLHeadingElement;
+
+	player1.innerText = `${username}`;
+	player2.innerText = opponent || "Opponent";
+}
+
 /*
 
 const handlePlayerJoinRequestCallback = (response: PlayerJoinRequest) => {
@@ -157,8 +166,14 @@ startPageFormEl.addEventListener("submit", (e) => {
 	socket.on("roomCreated", (event: RoomCreatedEvent) => {
 		console.log("Room created: ", event.roomId, "With players: ", event.players);
 
+		const opponent = event.players.find(player => player.username !== username)?.username;
+
 		// function to display the game-room
 		showGameRoom();
+		if (username && opponent) {
+			usernamesDisplay(username, opponent);
+		}
+
 	});
 
 	socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
