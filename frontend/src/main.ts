@@ -20,34 +20,6 @@ const gamePageEl = document.querySelector("#gamePage") as HTMLElement;
 const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElement;
 const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
 
-/* function shuffleArray(array: Element[]): Element[] {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-} */
-
-/* function randomSquare() {
-    // Remove "virus" class from all squares
-    gridItems.forEach((gridItem) => {
-        gridItem.classList.remove("virus");
-    });
-
-    // Shuffle the array of grid items
-    const shuffledGridItems = shuffleArray(Array.from(gridItems));
-    
-    // Add "virus" class to the first item of the shuffled array
-    shuffledGridItems[0].classList.add("virus");
-}
-
-function moveVirus() {
-	randomSquare();
-	const delay = Math.random() * 10000;
-	setTimeout(moveVirus, delay);
-	console.log(delay, "virusPosition");
-}
-moveVirus(); */
 
 // Show waiting room
 const showWaitingRoom = () => {
