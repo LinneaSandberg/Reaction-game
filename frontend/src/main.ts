@@ -20,6 +20,16 @@ const gamePageEl = document.querySelector("#gamePage") as HTMLElement;
 const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElement;
 const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
 
+let startTime = 0;
+
+
+const updateTimer = () => {
+	const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+	const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+
+	const currentTime = new Date().getTime();
+	const passedTime = currentTime - startTime;
+}
 
 // Show waiting room
 const showWaitingRoom = () => {
@@ -40,20 +50,6 @@ const usernamesDisplay = (username: string, opponent: string) => {
 	player1.innerText = `${username}`;
 	player2.innerText = opponent || "Opponent";
 }
-
-/*
-
-const handlePlayerJoinRequestCallback = (response: PlayerJoinRequest) => {
-	console.log("Join was successfull", response);
-
-	if (!response.success) {
-		alert("could not join the room");
-		return;
-	}
-
-	showWaitingRoom();
-}
-*/
 
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
@@ -76,11 +72,6 @@ socket.io.on("reconnect", () => {
 	console.log("🔗 Socket ID:", socket.id);
 });
 
-// // Listen for when the nice server says hello
-// socket.on("virusPosition", (virusPosition) => {
-// 	console.log("🤩 Hello! I'm VIRUS position 😋", virusPosition);
-// });
-
 // Create varible for username
 let username: string | null = null;
 let highScore = 0;
@@ -101,9 +92,6 @@ startPageFormEl.addEventListener("submit", (e) => {
 
 	// set username
 	username = trimmedUsername;
-
-
-
 
 	// Emit `playerJoinRequest`-event to the server and wait for acknowledgement
 socket.emit("playerJoinRequest", username, (response) => {

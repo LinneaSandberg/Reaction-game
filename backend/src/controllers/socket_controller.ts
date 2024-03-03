@@ -81,23 +81,9 @@ export const handleConnection = (
 	return Math.floor(Math.random() * 25); // Assuming a grid of 25 squares for example
 	}
 
-	// // Listen for room list request
-	// socket.on("roomForPlayers", async (callback) => {
-	// 	debug("Got request for rooms!");
-
-
-	// 	// Här ska vi skriva logik för att queria databasen och få ut rum, frågan är då om vi ska ha skapa en massa rum eller om rummet skall skapas när det är två användare som är där?
-	// });
-
-
-
 	// Listen for player join request
 	socket.on("playerJoinRequest", async (username: string) => {
 		debug("Player %s want's to join the game!", socket.id);
-
-		// const player = await prisma.player.findMany();
-
-		// console.log("our players: ", player);
 
 
 		const player = await prisma.player.create({
@@ -128,14 +114,7 @@ export const handleConnection = (
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", { message: "waiting for another player to join!" });
 		}
-
-
-		// callback({
-		// 	success: true
-		// });
 	});
-
-
 
 	// handler for disconnecting
 	socket.on("disconnect", () => {
@@ -146,5 +125,4 @@ export const handleConnection = (
 			waitingPlayers.splice(index, 1);
 		}
 	});
-
 }
