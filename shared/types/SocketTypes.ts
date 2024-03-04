@@ -7,6 +7,7 @@ export interface ServerToClientEvents {
     waitingForPlayer: (event: WaitingForPlayersEvent) => void;
     virusPosition: (position: number) => void;
     virusDelay: (data: VirusDelay) => void;
+    playerLeft: (username: string) => void;
 }
 
 // Events emitted by the client to the server

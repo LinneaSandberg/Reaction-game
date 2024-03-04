@@ -10,6 +10,7 @@ import "./assets/scss/style.scss";
 const SOCKET_HOST = import.meta.env.VITE_SOCKET_HOST;
 
 const gridItems = document.querySelectorAll(".grid-item") as NodeListOf<Element>;
+const displayBoxEl = document.querySelector("#app") as HTMLDivElement;
 
 // display or no-display
 const startPageEl = document.querySelector("#startPage") as HTMLElement;
@@ -20,26 +21,37 @@ const gamePageEl = document.querySelector("#gamePage") as HTMLElement;
 const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElement;
 const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
 
-let startTime = 0;
-
-
-const updateTimer = () => {
-	const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
-	const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
-
-	const currentTime = new Date().getTime();
-	const passedTime = currentTime - startTime;
-}
-
 // Show waiting room
 const showWaitingRoom = () => {
 	startPageEl.classList.add("hide");
 	lobbyPageEl.classList.remove("hide");
 }
 
+// Show game
 const showGameRoom = () => {
 	gamePageEl.classList.remove("hide");
 	lobbyPageEl.classList.add("hide");
+}
+
+// Show player that the other player left
+const showDisconnect = () => {
+
+	// create a DIV element
+	const displayEl = document.createElement("div");
+
+	// Set class of that element
+	displayEl.classList.add("displayDisconnect");
+
+	// Set content of the DIV element 
+	displayEl.innerHTML = `
+	<h3>The other player was a n00b and left you hanging!</h3>
+	<figure>
+	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/therokuchannel-the-roku-channel-this-joka-david-gborie-2kcrRowOHeH9n1EBx6">via GIPHY</a></p>
+	</figure>
+	`;
+
+	// Append the DIV element to the page
+	displayBoxEl.appendChild(displayEl);
 }
 
 // insert usersnames to results
@@ -70,6 +82,15 @@ socket.on("disconnect", () => {
 socket.io.on("reconnect", () => {
 	console.log("🍽️ Reconnected to the server:", SOCKET_HOST);
 	console.log("🔗 Socket ID:", socket.id);
+});
+
+socket.on("playerLeft", (username) => {
+	console.log("A user has left the game: ", username);
+
+	// Send a notice to the other player in the room
+	showDisconnect();
+	
+	// give that other player the option to play atother game
 });
 
 // Create varible for username

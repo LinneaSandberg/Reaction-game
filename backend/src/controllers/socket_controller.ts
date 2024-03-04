@@ -5,6 +5,7 @@ import Debug from "debug";
 import { Server, Socket } from "socket.io";
 import { ClientToServerEvents, ServerToClientEvents, WaitingPlayers } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
+import { deletePlayer, getPlayer } from "../services/PlayerService";
 //import { virusPosition } from "./game_controller";
 
 // Create a new debug instance
@@ -106,23 +107,69 @@ export const handleConnection = (
 		if (waitingPlayers.length >= 2) {
 			const playersInRoom = waitingPlayers.splice(0, 2);
 
-			const roomId = `room_${Date.now()}`;
+			// Create a Game in MongoDB and retrive the room/game ID
+			const room = await prisma.game.create({
+				data: {
+					players: {
+						connect: playersInRoom.map((p) => ({ id: p.players.playerId })),
+					},
+				},
+				include: {
+					players: true,
+				},
+			});
+
+			const roomId = room.id;
 
 			playersInRoom.forEach((player) => {
 				io.to(player.socketId).emit("roomCreated", { roomId, players: playersInRoom.map(p => p.players) });
 			});
 		} else {
-			io.to(socket.id).emit("waitingForPlayer", { message: "waiting for another player to join!" });
+			io.to(socket.id).emit("waitingForPlayer", { message: "Waiting for another player to join!" });
 		}
 	});
 
 	// handler for disconnecting
-	socket.on("disconnect", () => {
+	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
 
 		const index = waitingPlayers.findIndex((player) => player.socketId === socket.id);
 		if (index !== -1) {
 			waitingPlayers.splice(index, 1);
 		}
+
+		// Find player to know what room that player was in
+		const player = await getPlayer(socket.id);
+
+		// If player does not exist, the return
+		if (!player) {
+			return;
+		}
+
+		// Eventuellt en koll som kollar att det har gått 10rundor och isf radera användaren och skicka highscore till databasen
+
+		// Find and remove the player from the room in MongoDB
+		if (player.gameId) {
+			await prisma.game.update({
+				where: {
+					id: player.gameId
+				},
+				data: {
+					players: {
+						disconnect: {
+							id: socket.id,
+						},
+					},
+				},
+			});
+		}
+
+		// Remove player after he plays
+		await deletePlayer(socket.id);
+
+		// Broadcast a notice to the room that the user has left
+		if (player.gameId) {
+			io.to(player.gameId).emit("playerLeft", player.username);
+		}		
 	});
 }
