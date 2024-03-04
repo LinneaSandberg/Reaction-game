@@ -138,106 +138,99 @@ startPageFormEl.addEventListener("submit", (e) => {
   // set username
   username = trimmedUsername;
 
-  /*
-// functions for reactiontime
+  // functions for reactiontime
 
-let startTime: number;
-let intervalId: number;
-let savedTime: number[] = [];
+  let startTime: number;
+  let intervalId: number;
+  let savedTime: number[] = [];
 
-const timerEl = document.querySelector(".timer") as HTMLElement;
-timerEl.innerHTML = `00:000`;
+  const timerEl = document.querySelector(".timer") as HTMLElement;
+  timerEl.innerHTML = `00:000`;
 
-function updateTimer() {
-  const currentTime = Date.now();
-  const elapsedTime = currentTime - startTime;
-startPageFormEl.addEventListener("submit", (e) => {
-	e.preventDefault();
+  function updateTimer() {
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - startTime;
 
-	console.log("It works to click the button!");
+    const seconds = Math.floor(elapsedTime / 1000)
+      .toString()
+      .padStart(2, "0");
+    const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
 
-	// Trim the input-value
-	const trimmedUsername = usernameInputEl.value.trim();
-
-  const seconds = Math.floor(elapsedTime / 1000)
-    .toString()
-    .padStart(2, "0");
-  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-  timerEl.innerHTML = `${seconds}:${milliseconds}`;
-  // savedTime = elapsedTime;
-}
-
-const startTimerEl = document.querySelector(".startTimer") as HTMLButtonElement;
-const stopTimerEl = document.querySelector(".stopTimer") as HTMLButtonElement;
-
-const startTimer = () => {
-  // Stop timer if it's already going
-  stopTimer();
-
-  startTime = Date.now();
-
-  // Återställ savedTime - frågan är om vi vill göra det??
-  // savedTime = [];
-
-  // update timer every millisecond
-  intervalId = setInterval(updateTimer, 100);
-};
-
-const stopTimer = () => {
-  if (!Array.isArray(savedTime)) {
-    savedTime = [];
-  }
-  clearInterval(intervalId);
-
-  if (startTime) {
-    savedTime.push(Date.now() - startTime);
-    console.log("Saved time", savedTime);
-  }
-  startTime = 0;
-  updateHighScore();
-
-  console.log("High Score:", calculateHighScore());
-};
-
-// click events for start and stop timer
-startTimerEl.addEventListener("click", () => {
-  startTimer();
-});
-
-stopTimerEl.addEventListener("click", () => {
-  stopTimer();
-});
-
-// Functions for calculating highscore
-function calculateHighScore() {
-  // Filter out negative or 0 numbers
-  const validTimes = savedTime.filter((time) => time > 0);
-
-  if (validTimes.length === 0) {
-    return 0;
+    timerEl.innerHTML = `${seconds}:${milliseconds}`;
+    // savedTime = elapsedTime;
   }
 
-  // Calculate average time
-  const averageTime =
-    validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
+  const startTimerEl = document.querySelector(
+    ".startTimer"
+  ) as HTMLButtonElement;
+  const stopTimerEl = document.querySelector(".stopTimer") as HTMLButtonElement;
 
-  return averageTime;
-}
+  const startTimer = () => {
+    // Stop timer if it's already going
+    stopTimer();
 
-let highScore = 0;
-const highScoreEl = document.querySelector(".highscore") as HTMLElement;
+    startTime = Date.now();
 
-// Function for updating highscore
-function updateHighScore() {
-  const currentHighScore = calculateHighScore();
+    // Återställ savedTime - frågan är om vi vill göra det??
+    // savedTime = [];
 
-  highScore = currentHighScore;
+    // update timer every millisecond
+    intervalId = setInterval(updateTimer, 100);
+  };
 
-  console.log("High Score:", highScore);
-  highScoreEl.innerHTML = `<p>${highScore}</p>`;
-}
-*/
+  const stopTimer = () => {
+    if (!Array.isArray(savedTime)) {
+      savedTime = [];
+    }
+    clearInterval(intervalId);
+
+    if (startTime) {
+      savedTime.push(Date.now() - startTime);
+      console.log("Saved time", savedTime);
+    }
+    startTime = 0;
+    updateHighScore();
+
+    console.log("High Score:", calculateHighScore());
+  };
+
+  // click events for start and stop timer
+  startTimerEl.addEventListener("click", () => {
+    startTimer();
+  });
+
+  stopTimerEl.addEventListener("click", () => {
+    stopTimer();
+  });
+
+  // Functions for calculating highscore
+  function calculateHighScore() {
+    // Filter out negative or 0 numbers
+    const validTimes = savedTime.filter((time) => time > 0);
+
+    if (validTimes.length === 0) {
+      return 0;
+    }
+
+    // Calculate average time
+    const averageTime =
+      validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
+
+    return averageTime;
+  }
+
+  let highScore = 0;
+  const highScoreEl = document.querySelector(".highscore") as HTMLElement;
+
+  // Function for updating highscore
+  function updateHighScore() {
+    const currentHighScore = calculateHighScore();
+
+    highScore = currentHighScore;
+
+    console.log("High Score:", highScore);
+    highScoreEl.innerHTML = `<p>${highScore}</p>`;
+  }
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
   socket.emit("playerJoinRequest", username, (response) => {
