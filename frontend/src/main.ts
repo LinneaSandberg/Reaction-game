@@ -32,62 +32,68 @@ let startTime: number;
 let intervalId: number;
 let savedTime: number[] = [];
 
-const timerEl = document.querySelector(".timer") as HTMLElement;
-timerEl.innerHTML = `00:000`;
+const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 
-function updateTimer() {
+player1pEl.innerHTML = `00:000`;
+player2pEl.innerHTML = `00:000`;
+
+function updateTimer(elapsedTime: number) {
   const currentTime = Date.now();
-  const elapsedTime = currentTime - startTime;
+  // elapsedTime = currentTime - startTime;
 
   const seconds = Math.floor(elapsedTime / 1000)
     .toString()
     .padStart(2, "0");
   const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
 
-  timerEl.innerHTML = `${seconds}:${milliseconds}`;
+  // console.log("This is seconds: ", seconds);
+  // console.log("This is milliseconds: ", milliseconds);
+  player1pEl.innerHTML = `${seconds}:${milliseconds}`;
+  player2pEl.innerHTML = `${seconds}:${milliseconds}`;
   // savedTime = elapsedTime;
 }
 
 const startTimerEl = document.querySelector(".startTimer") as HTMLButtonElement;
 const stopTimerEl = document.querySelector(".stopTimer") as HTMLButtonElement;
 
-const startTimer = () => {
-  // Stop timer if it's already going
-  stopTimer();
+// const startTimer = () => {
+//   // Stop timer if it's already going
+//   // stopTimer();
 
-  startTime = Date.now();
+//   startTime = Date.now();
 
-  // Återställ savedTime - frågan är om vi vill göra det??
-  // savedTime = [];
+//   // Återställ savedTime - frågan är om vi vill göra det??
+//   // savedTime = [];
 
-  // update timer every millisecond
-  intervalId = setInterval(updateTimer, 100);
-};
+//   // update timer every millisecond
+//   intervalId = setInterval(updateTimer, 100);
+// };
 
-const stopTimer = () => {
-  if (!Array.isArray(savedTime)) {
-    savedTime = [];
-  }
-  clearInterval(intervalId);
+// const stopTimer = () => {
+//   if (!Array.isArray(savedTime)) {
+//     savedTime = [];
+//   }
+//   clearInterval(intervalId);
 
-  if (startTime) {
-    savedTime.push(Date.now() - startTime);
-    console.log("Saved time", savedTime);
-  }
-  startTime = 0;
-  updateHighScore();
+//   if (startTime) {
+//     savedTime.push(Date.now() - startTime);
+//     console.log("Saved time", savedTime);
+//   }
+//   startTime = 0;
+//   updateHighScore();
 
-  console.log("High Score:", calculateHighScore());
-};
+//   console.log("High Score:", calculateHighScore());
+// };
 
-// click events for start and stop timer
-startTimerEl.addEventListener("click", () => {
-  startTimer();
-});
+// // click events for start and stop timer
+// startTimerEl.addEventListener("click", () => {
+//   startTimer();
+// });
 
-stopTimerEl.addEventListener("click", () => {
-  stopTimer();
-});
+// stopTimerEl.addEventListener("click", () => {
+//   stopTimer();
+// });
 
 // Functions for calculating highscore
 function calculateHighScore() {
@@ -114,8 +120,8 @@ function updateHighScore() {
 
   highScore = currentHighScore;
 
-  console.log("High Score:", highScore);
-  highScoreEl.innerHTML = `<p>${highScore}</p>`;
+  // console.log("High Score:", highScore);
+  // highScoreEl.innerHTML = `<p>${highScore}</p>`;
 }
 
 // const updateTimer = () => {
@@ -166,6 +172,12 @@ socket.on("disconnect", () => {
 socket.io.on("reconnect", () => {
   console.log("🍽️ Reconnected to the server:", SOCKET_HOST);
   console.log("🔗 Socket ID:", socket.id);
+});
+
+// Listen for the "updateTimer" event from the server
+socket.on("updateTimer", (elapsedTime: number) => {
+  // console.log("Received updateTimer event with elapsedTime:", elapsedTime);
+  updateTimer(elapsedTime); // Run the updateTimer function when the event is received
 });
 
 // Create varible for username
@@ -227,7 +239,7 @@ startPageFormEl.addEventListener("submit", (e) => {
 });
 
 socket.on("virusPosition", (position) => {
-  console.log(`New virus position: ${position}`);
+  // console.log(`New virus position: ${position}`);
 
   // Remove "virus" class from all grid items
   gridItems.forEach((item) => {
@@ -242,6 +254,8 @@ socket.on("virusPosition", (position) => {
     newPosition < gridItems.length
   ) {
     gridItems[newPosition].classList.add("virus");
+    // updateTimer();
+    socket.emit("startTimer");
   }
 });
 
@@ -252,6 +266,7 @@ gridItems.forEach((gridItem) => {
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
       console.log("Virus hit!💥");
+      socket.emit("stopTimer");
       socket.emit("hitVirus"); //Denna gör att "hit" skickas till servern MEN tas bort för båda.
       /* result++;
 			score.textContent += `${result}`; */

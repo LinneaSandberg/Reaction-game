@@ -1,20 +1,29 @@
 import { Player, Room, VirusPosition, VirusDelay } from "./Models";
-export {}
+export {};
 
 // Events emitted by the server to the client
 export interface ServerToClientEvents {
-    roomCreated: (event: RoomCreatedEvent) => void;
-    waitingForPlayer: (event: WaitingForPlayersEvent) => void;
-    virusPosition: (position: number) => void;
-    virusDelay: (data: VirusDelay) => void;
+  roomCreated: (event: RoomCreatedEvent) => void;
+  waitingForPlayer: (event: WaitingForPlayersEvent) => void;
+  virusPosition: (position: number) => void;
+  virusDelay: (data: VirusDelay) => void;
+  startTimer: () => void;
+  stopTimer: (elapsedTime: number) => void;
+  updateTimer: (elapsedTime: number) => void;
 }
 
 // Events emitted by the client to the server
 export interface ClientToServerEvents {
-    // playerJoinRequest: (username: string, callback: (success: boolean) => void) => void;
-    roomForPlayers: (callback: (rooms: Room[]) => void) => void;
-    playerJoinRequest: (username: string, callback: (response: PlayerJoinResponse) => void) => void;
-    hitVirus: () => void;
+  // playerJoinRequest: (username: string, callback: (success: boolean) => void) => void;
+  roomForPlayers: (callback: (rooms: Room[]) => void) => void;
+  playerJoinRequest: (
+    username: string,
+    callback: (response: PlayerJoinResponse) => void
+  ) => void;
+  hitVirus: () => void;
+  startTimer: () => void; // New event for starting the game
+  stopTimer: () => void; // New event for stopping the game
+  updateTimer: (elapsedTime: number) => void;
 }
 
 // export interface PlayerJoinRequest {
@@ -23,20 +32,19 @@ export interface ClientToServerEvents {
 // }
 
 export interface PlayerJoinResponse {
-    success: boolean;
+  success: boolean;
 }
 
 export interface RoomCreatedEvent {
-    roomId: string;
-    players: Player[];
+  roomId: string;
+  players: Player[];
 }
 
 export interface WaitingForPlayersEvent {
-    message: string;
+  message: string;
 }
 
 export interface WaitingPlayers {
-    players: Player;
-    socketId: string;
+  players: Player;
+  socketId: string;
 }
-
