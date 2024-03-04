@@ -12,9 +12,6 @@ const SOCKET_HOST = import.meta.env.VITE_SOCKET_HOST;
 const gridItems = document.querySelectorAll(
   ".grid-item"
 ) as NodeListOf<Element>;
-const virus = document.querySelector(".virus") as HTMLDivElement;
-const timeLeft = document.querySelector("#time-left") as HTMLDivElement;
-const score = document.querySelector(".score") as HTMLDivElement;
 
 // display or no-display
 const startPageEl = document.querySelector("#startPage") as HTMLElement;
@@ -29,48 +26,105 @@ const usernameInputEl = document.querySelector(
   "#usernameInput"
 ) as HTMLInputElement;
 
-let result = 0;
+// functions for reactiontime
 
-function shuffleArray(array: Element[]): Element[] {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+let startTime: number;
+let intervalId: number;
+let savedTime: number[] = [];
+
+const timerEl = document.querySelector(".timer") as HTMLElement;
+timerEl.innerHTML = `00:000`;
+
+function updateTimer() {
+  const currentTime = Date.now();
+  const elapsedTime = currentTime - startTime;
+
+  const seconds = Math.floor(elapsedTime / 1000)
+    .toString()
+    .padStart(2, "0");
+  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
+
+  timerEl.innerHTML = `${seconds}:${milliseconds}`;
+  // savedTime = elapsedTime;
+}
+
+const startTimerEl = document.querySelector(".startTimer") as HTMLButtonElement;
+const stopTimerEl = document.querySelector(".stopTimer") as HTMLButtonElement;
+
+const startTimer = () => {
+  // Stop timer if it's already going
+  stopTimer();
+
+  startTime = Date.now();
+
+  // Återställ savedTime - frågan är om vi vill göra det??
+  // savedTime = [];
+
+  // update timer every millisecond
+  intervalId = setInterval(updateTimer, 100);
+};
+
+const stopTimer = () => {
+  if (!Array.isArray(savedTime)) {
+    savedTime = [];
   }
-  return array;
-}
+  clearInterval(intervalId);
 
-function randomSquare() {
-  // Remove "virus" class from all squares
-  gridItems.forEach((gridItem) => {
-    gridItem.classList.remove("virus");
-  });
+  if (startTime) {
+    savedTime.push(Date.now() - startTime);
+    console.log("Saved time", savedTime);
+  }
+  startTime = 0;
+  updateHighScore();
 
-  // Shuffle the array of grid items
-  const shuffledGridItems = shuffleArray(Array.from(gridItems));
+  console.log("High Score:", calculateHighScore());
+};
 
-  // Add "virus" class to the first item of the shuffled array
-  shuffledGridItems[0].classList.add("virus");
-}
-
-function moveVirus() {
-  randomSquare();
-  const delay = Math.random() * 10000;
-  setTimeout(moveVirus, delay);
-  console.log(delay);
-}
-moveVirus();
-
-// Add event listener to each grid item to remove virus on click.
-gridItems.forEach((gridItem) => {
-  gridItem.addEventListener("mousedown", () => {
-    if (gridItem.classList.contains("virus")) {
-      gridItem.classList.remove("virus");
-      console.log("Virus hit!💥");
-      /* result++;
-			score.textContent += `${result}`; */
-    }
-  });
+// click events for start and stop timer
+startTimerEl.addEventListener("click", () => {
+  startTimer();
 });
+
+stopTimerEl.addEventListener("click", () => {
+  stopTimer();
+});
+
+// Functions for calculating highscore
+function calculateHighScore() {
+  // Filter out negative or 0 numbers
+  const validTimes = savedTime.filter((time) => time > 0);
+
+  if (validTimes.length === 0) {
+    return 0;
+  }
+
+  // Calculate average time
+  const averageTime =
+    validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
+
+  return averageTime;
+}
+
+let highScore = 0;
+const highScoreEl = document.querySelector(".highscore") as HTMLElement;
+
+// Function for updating highscore
+function updateHighScore() {
+  const currentHighScore = calculateHighScore();
+
+  highScore = currentHighScore;
+
+  console.log("High Score:", highScore);
+  highScoreEl.innerHTML = `<p>${highScore}</p>`;
+}
+
+// const updateTimer = () => {
+// 	const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+// 	const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+
+// 	const currentTime = new Date().getTime();
+// 	const passedTime = currentTime - startTime;
+// }
 
 // Show waiting room
 const showWaitingRoom = () => {
@@ -83,19 +137,14 @@ const showGameRoom = () => {
   lobbyPageEl.classList.add("hide");
 };
 
-/*
+// insert usersnames to results
+const usernamesDisplay = (username: string, opponent: string) => {
+  const player1 = document.querySelector("#player1") as HTMLHeadingElement;
+  const player2 = document.querySelector("#player2") as HTMLHeadingElement;
 
-const handlePlayerJoinRequestCallback = (response: PlayerJoinRequest) => {
-	console.log("Join was successfull", response);
-
-	if (!response.success) {
-		alert("could not join the room");
-		return;
-	}
-
-	showWaitingRoom();
-}
-*/
+  player1.innerText = `${username}`;
+  player2.innerText = opponent || "Opponent";
+};
 
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
@@ -121,11 +170,13 @@ socket.io.on("reconnect", () => {
 
 // Create varible for username
 let username: string | null = null;
-let highScore = 0;
+// let highScore = 0;
 
 // add eventlistner listening for when the form-username is submitted
 startPageFormEl.addEventListener("submit", (e) => {
   e.preventDefault();
+
+  console.log("It works to click the button!");
 
   // Trim the input-value
   const trimmedUsername = usernameInputEl.value.trim();
@@ -137,100 +188,6 @@ startPageFormEl.addEventListener("submit", (e) => {
 
   // set username
   username = trimmedUsername;
-
-  // functions for reactiontime
-
-  let startTime: number;
-  let intervalId: number;
-  let savedTime: number[] = [];
-
-  const timerEl = document.querySelector(".timer") as HTMLElement;
-  timerEl.innerHTML = `00:000`;
-
-  function updateTimer() {
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - startTime;
-
-    const seconds = Math.floor(elapsedTime / 1000)
-      .toString()
-      .padStart(2, "0");
-    const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-    timerEl.innerHTML = `${seconds}:${milliseconds}`;
-    // savedTime = elapsedTime;
-  }
-
-  const startTimerEl = document.querySelector(
-    ".startTimer"
-  ) as HTMLButtonElement;
-  const stopTimerEl = document.querySelector(".stopTimer") as HTMLButtonElement;
-
-  const startTimer = () => {
-    // Stop timer if it's already going
-    stopTimer();
-
-    startTime = Date.now();
-
-    // Återställ savedTime - frågan är om vi vill göra det??
-    // savedTime = [];
-
-    // update timer every millisecond
-    intervalId = setInterval(updateTimer, 100);
-  };
-
-  const stopTimer = () => {
-    if (!Array.isArray(savedTime)) {
-      savedTime = [];
-    }
-    clearInterval(intervalId);
-
-    if (startTime) {
-      savedTime.push(Date.now() - startTime);
-      console.log("Saved time", savedTime);
-    }
-    startTime = 0;
-    updateHighScore();
-
-    console.log("High Score:", calculateHighScore());
-  };
-
-  // click events for start and stop timer
-  startTimerEl.addEventListener("click", () => {
-    startTimer();
-  });
-
-  stopTimerEl.addEventListener("click", () => {
-    stopTimer();
-  });
-
-  // Functions for calculating highscore
-  function calculateHighScore() {
-    // Filter out negative or 0 numbers
-    const validTimes = savedTime.filter((time) => time > 0);
-
-    if (validTimes.length === 0) {
-      return 0;
-    }
-
-    // Calculate average time
-    const averageTime =
-      validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
-
-    return averageTime;
-  }
-
-  let highScore = 0;
-  const highScoreEl = document.querySelector(".highscore") as HTMLElement;
-
-  // Function for updating highscore
-  function updateHighScore() {
-    const currentHighScore = calculateHighScore();
-
-    highScore = currentHighScore;
-
-    console.log("High Score:", highScore);
-    highScoreEl.innerHTML = `<p>${highScore}</p>`;
-  }
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
   socket.emit("playerJoinRequest", username, (response) => {
@@ -253,11 +210,51 @@ startPageFormEl.addEventListener("submit", (e) => {
       event.players
     );
 
+    const opponent = event.players.find(
+      (player) => player.username !== username
+    )?.username;
+
     // function to display the game-room
     showGameRoom();
+    if (username && opponent) {
+      usernamesDisplay(username, opponent);
+    }
   });
 
   socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
     console.log(event.message);
+  });
+});
+
+socket.on("virusPosition", (position) => {
+  console.log(`New virus position: ${position}`);
+
+  // Remove "virus" class from all grid items
+  gridItems.forEach((item) => {
+    item.classList.remove("virus");
+  });
+
+  // Add "virus" class to the new position
+  const newPosition = Number(position);
+  if (
+    !isNaN(newPosition) &&
+    newPosition >= 0 &&
+    newPosition < gridItems.length
+  ) {
+    gridItems[newPosition].classList.add("virus");
+  }
+});
+
+//Add event listener to each grid item to remove virus on click.
+
+gridItems.forEach((gridItem) => {
+  gridItem.addEventListener("mousedown", () => {
+    if (gridItem.classList.contains("virus")) {
+      gridItem.classList.remove("virus");
+      console.log("Virus hit!💥");
+      socket.emit("hitVirus"); //Denna gör att "hit" skickas till servern MEN tas bort för båda.
+      /* result++;
+			score.textContent += `${result}`; */
+    }
   });
 });

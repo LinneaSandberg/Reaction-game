@@ -10,3 +10,11 @@ export interface Player {
     playerId: string;
     username: string;
 }
+
+export interface VirusPosition {
+    position: number;
+}
+
+export interface VirusDelay {
+    delay: number;
+}
