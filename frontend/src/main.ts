@@ -21,6 +21,20 @@ const gamePageEl = document.querySelector("#gamePage") as HTMLElement;
 const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElement;
 const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
 
+// Result display
+const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+const player1TimerEl = document.querySelector("#player1Timer") as HTMLParagraphElement;
+const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+const player2TimerEl = document.querySelector("#player2Timer") as HTMLParagraphElement;
+
+
+// Variables for timer and reationtime
+let timerInterval: number | null;
+let reactionTime: number | null;
+let elapsedTime: number = 0;
+let player1ReactionTime: number | null = null;
+let player2ReactionTime: number | null = null;
+
 // Show waiting room
 const showWaitingRoom = () => {
 	startPageEl.classList.add("hide");
@@ -63,6 +77,21 @@ const usernamesDisplay = (username: string, opponent: string) => {
 	player2.innerText = opponent || "Opponent";
 }
 
+const updateTimer = () => {
+	const seconds = Math.floor((elapsedTime % 60000) / 1000);
+	const milliseconds = elapsedTime % 1000;
+
+	const formattedTime = `${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+
+	if (player1TimerEl) {
+		player1TimerEl.innerText = `player 1 ${formattedTime}`;
+	}
+
+	if (player2TimerEl) {
+		player2TimerEl.innerText = `player 2 ${formattedTime}`;
+	}
+}
+
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(SOCKET_HOST);
@@ -93,22 +122,22 @@ socket.on("playerLeft", (username) => {
 	// give that other player the option to play atother game
 });
 
-let timerInterval: number | null;
-let reactionTime: number | null;
-
-const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
-const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
-
 
 socket.on("startTimer", () => {
 	console.log("Timer started!");
-	reactionTime = null;
+	// reactionTime = null;
+	elapsedTime = 0;
+	player1ReactionTime = null;
+	player2ReactionTime = null;
+
   
 	// Start a timer interval to update the UI
 	timerInterval = setInterval(() => {
+		elapsedTime += 100;
+		updateTimer();
 	  // Update UI with elapsed time
 	  // Implement this function based on your UI structure
-	}, 3000);
+	}, 100);
 });
 
 socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
