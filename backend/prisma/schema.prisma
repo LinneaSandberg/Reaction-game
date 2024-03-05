@@ -8,16 +8,27 @@ datasource db {
 }
 
 model Player {
-  id       String @id @map("_id")
-  username String @unique
-  // gameId   String @db.ObjectId
-  // game     Game   @relation(fields: [gameId], references: [id])
+  id       String  @id @map("_id")
+  username String  @unique
+  gameId   String? @db.ObjectId
+  game     Game?   @relation(fields: [gameId], references: [id])
+  // HighScore HighScore
 }
 
 model Game {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  // players     Player[]
+  players     Player[]
   winnerId    String?
   createdAt   DateTime  @default(now())
   completedAt DateTime?
+  // HighScore   HighScore[]
 }
+
+// model HighScore {
+//   id       String @id @map("_id")
+//   score    Int
+//   playerId String
+//   player   Player @relation(fields: [playerId], references: [id])
+//   gameId   String @db.ObjectId
+//   game     Game   @relation(fields: [gameId], references: [id])
+// }

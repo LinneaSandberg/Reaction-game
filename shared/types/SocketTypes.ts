@@ -10,6 +10,9 @@ export interface ServerToClientEvents {
   startTimer: (startTime: number) => void;
   stopTimer: (event: stopTimerEvent) => void;
   updateTimer: (elapsedTime: number) => void;
+  playerLeft: (username: string) => void;
+  countdown: (seconds: number) => void;
+  startGame: () => void;
 }
 
 // Events emitted by the client to the server

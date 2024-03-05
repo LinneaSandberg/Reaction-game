@@ -9,6 +9,7 @@ import {
 	WaitingPlayers,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
+import { deletePlayer, getPlayer } from "../services/PlayerService";
 //import { virusPosition } from "./game_controller";
 
 // Create a new debug instance
@@ -83,10 +84,10 @@ export const handleConnection = (
 		io: Server<ClientToServerEvents, ServerToClientEvents>
 	) {
 		const moveVirus = () => {
-			const newVirusPosition = calculateVirusPosition();
+			const newVirusPosition = virusPosition();
 			io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
 
-			const delay = calculateDelay();
+			const delay = virusDelay();
 			setTimeout(moveVirus, delay);
 
 			// debug(`Virus will move in ${delay}ms`);
@@ -97,43 +98,26 @@ export const handleConnection = (
 		moveVirus(); // Start moving the virus
 	}
 
-	function calculateVirusPosition(): number {
-		// Logic to calculate new virus position
-		return Math.floor(Math.random() * 25); // Example for a grid of 25 squares
+	function virusPosition(): number {
+		return Math.floor(Math.random() * 25);
 	}
 
-	function calculateDelay(): number {
-		// Logic to calculate the delay before the virus moves again
-		return Math.random() * 10000; // Random delay up to 10 seconds
+	function virusDelay(): number {
+		return Math.floor(Math.random() * 9001) + 1000;
 	}
 
-	const initialVirusPosition = calculateInitialVirusPosition();
+	const initialVirusPosition = virusPosition();
 	socket.emit("virusPosition", initialVirusPosition);
 
 	// Handling a virus hit from a client
-	socket.on("hitVirus", async () => {
-		// Update game state as necessary
-		debug(`Virus hit by ${socket.id}`);
-
+	socket.on("hitVirus", () => {
 		stopTimer(socket.id);
 
 		// Calculate and emit new virus position
-
-		const newVirusPosition = calculateNewVirusPosition();
-		io.emit("virusPosition", newVirusPosition); // Emit to all clients
+		const newVirusPosition = virusPosition();
+		io.emit("virusPosition", newVirusPosition);
+		virusDelay();
 	});
-
-	// Add more event listeners and logic as needed
-
-	function calculateInitialVirusPosition(): number {
-		// Logic to calculate initial virus position
-		return Math.floor(Math.random() * 25); // Assuming a grid of 25 squares for example
-	}
-
-	function calculateNewVirusPosition(): number {
-		// Logic to calculate new virus position after hit
-		return Math.floor(Math.random() * 25); // Assuming a grid of 25 squares for example
-	}
 
 	// Listen for player join request
 	socket.on("playerJoinRequest", async (username: string) => {
@@ -158,8 +142,39 @@ export const handleConnection = (
 		if (waitingPlayers.length >= 2) {
 			const playersInRoom = waitingPlayers.splice(0, 2);
 
-			const roomId = `room_${Date.now()}`;
+			// Create a Game in MongoDB and retrive the room/game ID
+			const room = await prisma.game.create({
+				data: {
+					players: {
+						connect: playersInRoom.map((p) => ({
+							id: p.players.playerId,
+						})),
+					},
+				},
+				include: {
+					players: true,
+				},
+			});
 
+			function initiateCountdown(
+				io: Server<ClientToServerEvents, ServerToClientEvents>
+			) {
+				let countdown = 3;
+				const countdownInterval = setInterval(() => {
+					io.emit("countdown", countdown);
+					countdown--;
+					if (countdown < -1) {
+						// Wait one interval after reaching 0 before clearing
+						clearInterval(countdownInterval);
+						setTimeout(() => {
+							io.emit("startGame");
+						}, 100);
+					}
+				}, 1000);
+			}
+
+			const roomId = room.id;
+			initiateCountdown(io);
 			playersInRoom.forEach((player) => {
 				io.to(player.socketId).emit("roomCreated", {
 					roomId,
@@ -176,14 +191,48 @@ export const handleConnection = (
 	});
 
 	// handler for disconnecting
-	socket.on("disconnect", () => {
-		// debug("A Player disconnected", socket.id);
+	socket.on("disconnect", async () => {
+		debug("A Player disconnected", socket.id);
 
 		const index = waitingPlayers.findIndex(
 			(player) => player.socketId === socket.id
 		);
 		if (index !== -1) {
 			waitingPlayers.splice(index, 1);
+		}
+
+		// Find player to know what room that player was in
+		const player = await getPlayer(socket.id);
+
+		// If player does not exist, the return
+		if (!player) {
+			return;
+		}
+
+		// Eventuellt en koll som kollar att det har gått 10rundor och isf radera användaren och skicka highscore till databasen
+
+		// Find and remove the player from the room in MongoDB
+		if (player.gameId) {
+			await prisma.game.update({
+				where: {
+					id: player.gameId,
+				},
+				data: {
+					players: {
+						disconnect: {
+							id: socket.id,
+						},
+					},
+				},
+			});
+		}
+
+		// Remove player after he plays
+		await deletePlayer(socket.id);
+
+		// Broadcast a notice to the room that the user has left
+		if (player.gameId) {
+			io.to(player.gameId).emit("playerLeft", player.username);
 		}
 	});
 };
