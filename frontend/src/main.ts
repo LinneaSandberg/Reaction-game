@@ -32,16 +32,6 @@ const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 player1pEl.innerHTML = `00:000`;
 player2pEl.innerHTML = `00:000`;
 
-// function updateTimer(elapsedTime: number, playerId: string) {
-//   // const seconds = Math.floor(elapsedTime / 1000)
-//   //   .toString()
-//   //   .padStart(2, "0");
-//   // const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-//   player1pEl.innerHTML = `${seconds}:${milliseconds}`;
-//   player2pEl.innerHTML = `${seconds}:${milliseconds}`;
-// }
-
 // Show waiting room
 const showWaitingRoom = () => {
   startPageEl.classList.add("hide");
@@ -84,26 +74,20 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-// Listen for the "updateTimer" event from the server
-// socket.on("updateTimer", (elapsedTime: number) => {
-//   // console.log("Received updateTimer event with elapsedTime:", elapsedTime);
-//   // updateTimer(elapsedTime); // Run the updateTimer function when the event is received
-// });
-
 socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  console.log("PlayerId", playerId);
+  // console.log("PlayerId", playerId);
   const seconds = Math.floor(elapsedTime / 1000)
     .toString()
     .padStart(2, "0");
   const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
 
-  if (playerId === socket.id) {
-    if (player1pEl) {
-      player1pEl.innerHTML = `${seconds}:${milliseconds}`;
-    } else if (player2pEl) {
-      player2pEl.innerHTML = `${seconds}:${milliseconds}`;
-    }
+  // if (player1pEl && playerId === socket.id) {
+  if (player1pEl && playerId === socket.id) {
+    player1pEl.innerHTML = `${seconds}:${milliseconds}`;
+  } else if (player2pEl && playerId !== socket.id) {
+    player2pEl.innerHTML = `${seconds}:${milliseconds}`;
   }
+  // }
 });
 
 // Create varible for username

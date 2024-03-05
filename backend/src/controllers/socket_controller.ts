@@ -37,15 +37,16 @@ export const handleConnection = (
 	function startTimer() {
 		if (!isGameRunning) {
 			isGameRunning = true;
+
 			startTime = Date.now();
 
 			// Emit a signal to all clients to start their timers
-			io.emit("startTimer");
+			io.emit("startTimer", startTime);
 
 			// Update timer every millisecond
 			intervalId = setInterval(() => {
 				const elapsedTime = Date.now() - startTime;
-				io.emit("updateTimer", elapsedTime);
+				// io.emit("updateTimer", elapsedTime);
 			}, 100);
 		}
 	}
@@ -64,7 +65,7 @@ export const handleConnection = (
 			const elapsedTime = Date.now() - startTime;
 
 			// Emit a signal to all clients to stop their timers
-			io.to(socket.id).emit("stopTimer", {
+			io.emit("stopTimer", {
 				playerId: socket.id,
 				elapsedTime,
 			});
@@ -72,28 +73,11 @@ export const handleConnection = (
 		}
 	}
 
-	// New event listener for starting the game
 	socket.on("startTimer", () => {
-		// debug("Received startGame event from", socket.id);
 		startTimer();
 	});
 
-	socket.on("updateTimer", (elapsedTime) => {
-		// debug("Received updateTimer event from", socket.id);
-		io.to(socket.id).emit("updateTimer", elapsedTime);
-	});
-
-	// New event listener for stopping the game
-	// socket.on("stopTimer", (username: string) => {
-	// 	// debug("Received stopGame event from", username);
-	// 	stopTimer();
-	// });
-
-	// socket.on("hitVirus", () => {
-	// 	// debug(`Virus hit by ${socket.id}`);
-	// 	stopTimer();
-	// 	// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
-	// });
+	socket.on("updateTimer", () => {});
 
 	function moveVirusAutomatically(
 		io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -106,7 +90,7 @@ export const handleConnection = (
 			setTimeout(moveVirus, delay);
 
 			// debug(`Virus will move in ${delay}ms`);
-			startTimer();
+			// startTimer();
 			// debug("Starting timer");
 		};
 
@@ -201,6 +185,5 @@ export const handleConnection = (
 		if (index !== -1) {
 			waitingPlayers.splice(index, 1);
 		}
-		// stopTimer();
 	});
 };

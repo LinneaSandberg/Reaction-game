@@ -7,7 +7,7 @@ export interface ServerToClientEvents {
   waitingForPlayer: (event: WaitingForPlayersEvent) => void;
   virusPosition: (position: number) => void;
   virusDelay: (data: VirusDelay) => void;
-  startTimer: () => void;
+  startTimer: (startTime: number) => void;
   stopTimer: (event: stopTimerEvent) => void;
   updateTimer: (elapsedTime: number) => void;
 }
