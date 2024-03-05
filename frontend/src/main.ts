@@ -26,110 +26,20 @@ const usernameInputEl = document.querySelector(
   "#usernameInput"
 ) as HTMLInputElement;
 
-// functions for reactiontime
-
-let startTime: number;
-let intervalId: number;
-let savedTime: number[] = [];
-
 const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
 const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 
 player1pEl.innerHTML = `00:000`;
 player2pEl.innerHTML = `00:000`;
 
-function updateTimer(elapsedTime: number) {
-  const currentTime = Date.now();
-  // elapsedTime = currentTime - startTime;
+// function updateTimer(elapsedTime: number, playerId: string) {
+//   // const seconds = Math.floor(elapsedTime / 1000)
+//   //   .toString()
+//   //   .padStart(2, "0");
+//   // const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
 
-  const seconds = Math.floor(elapsedTime / 1000)
-    .toString()
-    .padStart(2, "0");
-  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-  // console.log("This is seconds: ", seconds);
-  // console.log("This is milliseconds: ", milliseconds);
-  player1pEl.innerHTML = `${seconds}:${milliseconds}`;
-  player2pEl.innerHTML = `${seconds}:${milliseconds}`;
-  // savedTime = elapsedTime;
-}
-
-const startTimerEl = document.querySelector(".startTimer") as HTMLButtonElement;
-const stopTimerEl = document.querySelector(".stopTimer") as HTMLButtonElement;
-
-// const startTimer = () => {
-//   // Stop timer if it's already going
-//   // stopTimer();
-
-//   startTime = Date.now();
-
-//   // Återställ savedTime - frågan är om vi vill göra det??
-//   // savedTime = [];
-
-//   // update timer every millisecond
-//   intervalId = setInterval(updateTimer, 100);
-// };
-
-// const stopTimer = () => {
-//   if (!Array.isArray(savedTime)) {
-//     savedTime = [];
-//   }
-//   clearInterval(intervalId);
-
-//   if (startTime) {
-//     savedTime.push(Date.now() - startTime);
-//     console.log("Saved time", savedTime);
-//   }
-//   startTime = 0;
-//   updateHighScore();
-
-//   console.log("High Score:", calculateHighScore());
-// };
-
-// // click events for start and stop timer
-// startTimerEl.addEventListener("click", () => {
-//   startTimer();
-// });
-
-// stopTimerEl.addEventListener("click", () => {
-//   stopTimer();
-// });
-
-// Functions for calculating highscore
-function calculateHighScore() {
-  // Filter out negative or 0 numbers
-  const validTimes = savedTime.filter((time) => time > 0);
-
-  if (validTimes.length === 0) {
-    return 0;
-  }
-
-  // Calculate average time
-  const averageTime =
-    validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
-
-  return averageTime;
-}
-
-let highScore = 0;
-const highScoreEl = document.querySelector(".highscore") as HTMLElement;
-
-// Function for updating highscore
-function updateHighScore() {
-  const currentHighScore = calculateHighScore();
-
-  highScore = currentHighScore;
-
-  // console.log("High Score:", highScore);
-  // highScoreEl.innerHTML = `<p>${highScore}</p>`;
-}
-
-// const updateTimer = () => {
-// 	const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
-// 	const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
-
-// 	const currentTime = new Date().getTime();
-// 	const passedTime = currentTime - startTime;
+//   player1pEl.innerHTML = `${seconds}:${milliseconds}`;
+//   player2pEl.innerHTML = `${seconds}:${milliseconds}`;
 // }
 
 // Show waiting room
@@ -175,9 +85,25 @@ socket.io.on("reconnect", () => {
 });
 
 // Listen for the "updateTimer" event from the server
-socket.on("updateTimer", (elapsedTime: number) => {
-  // console.log("Received updateTimer event with elapsedTime:", elapsedTime);
-  updateTimer(elapsedTime); // Run the updateTimer function when the event is received
+// socket.on("updateTimer", (elapsedTime: number) => {
+//   // console.log("Received updateTimer event with elapsedTime:", elapsedTime);
+//   // updateTimer(elapsedTime); // Run the updateTimer function when the event is received
+// });
+
+socket.on("stopTimer", ({ playerId, elapsedTime }) => {
+  console.log("PlayerId", playerId);
+  const seconds = Math.floor(elapsedTime / 1000)
+    .toString()
+    .padStart(2, "0");
+  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
+
+  if (playerId === socket.id) {
+    if (player1pEl) {
+      player1pEl.innerHTML = `${seconds}:${milliseconds}`;
+    } else if (player2pEl) {
+      player2pEl.innerHTML = `${seconds}:${milliseconds}`;
+    }
+  }
 });
 
 // Create varible for username
@@ -254,7 +180,6 @@ socket.on("virusPosition", (position) => {
     newPosition < gridItems.length
   ) {
     gridItems[newPosition].classList.add("virus");
-    // updateTimer();
     socket.emit("startTimer");
   }
 });
@@ -266,7 +191,9 @@ gridItems.forEach((gridItem) => {
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
       console.log("Virus hit!💥");
-      socket.emit("stopTimer");
+      // socket.emit("stopTimer", "username");
+      console.log("Username som klickade", username);
+
       socket.emit("hitVirus"); //Denna gör att "hit" skickas till servern MEN tas bort för båda.
       /* result++;
 			score.textContent += `${result}`; */

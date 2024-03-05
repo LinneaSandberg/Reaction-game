@@ -1,4 +1,4 @@
-import { Player, Room, VirusPosition, VirusDelay } from "./Models";
+import { Player, Room, VirusDelay } from "./Models";
 export {};
 
 // Events emitted by the server to the client
@@ -8,7 +8,7 @@ export interface ServerToClientEvents {
   virusPosition: (position: number) => void;
   virusDelay: (data: VirusDelay) => void;
   startTimer: () => void;
-  stopTimer: (elapsedTime: number) => void;
+  stopTimer: (event: stopTimerEvent) => void;
   updateTimer: (elapsedTime: number) => void;
 }
 
@@ -22,8 +22,8 @@ export interface ClientToServerEvents {
   ) => void;
   hitVirus: () => void;
   startTimer: () => void; // New event for starting the game
-  stopTimer: () => void; // New event for stopping the game
-  updateTimer: (elapsedTime: number) => void;
+  stopTimer: (username: string) => void; // New event for stopping the game
+  updateTimer: (elapsedTime: number, playerId: string) => void;
 }
 
 // export interface PlayerJoinRequest {
@@ -47,4 +47,9 @@ export interface WaitingForPlayersEvent {
 export interface WaitingPlayers {
   players: Player;
   socketId: string;
+}
+
+export interface stopTimerEvent {
+  playerId: string;
+  elapsedTime: number;
 }
