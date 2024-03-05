@@ -14,6 +14,12 @@ const debug = Debug("backend:socket_controller");
 // array of players waiting to play
 const waitingPlayers: WaitingPlayers[] = [];
 
+// variabler för timer och virus
+let virusActive = false;
+let virusStartTime: number;
+let player1ClickTime: number | null;
+let player2ClickTime: number | null;
+
 
 // Handle a user connecting
 export const handleConnection = (
@@ -29,6 +35,19 @@ export const handleConnection = (
 	  socket.on("hitVirus", () => {
 		debug(`Virus hit by ${socket.id}`);
 		// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
+
+		if (virusActive) {
+			const clickTime = Date.now();
+			const reactionTime = clickTime - virusStartTime;
+
+			if (socket.id === "player1") {
+				player1ClickTime = reactionTime;
+			} else if (socket.id === "player2") {
+				player2ClickTime = reactionTime;
+			}
+
+			io.emit("playerClicked", { playerId: socket.id, reactionTime });
+		}
 	  });
 
 
@@ -37,6 +56,15 @@ export const handleConnection = (
 		const moveVirus = () => {
 		  const newVirusPosition = calculateVirusPosition();
 		  io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
+
+		  virusActive = true;
+		  virusStartTime = Date.now();
+		  player1ClickTime = null;
+		  player2ClickTime = null;
+		  
+		 
+		  // Emit message to start the timer on the client
+		  io.emit("startTimer");
 
 		  const delay = calculateDelay();
 		  setTimeout(moveVirus, delay);

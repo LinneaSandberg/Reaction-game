@@ -93,6 +93,50 @@ socket.on("playerLeft", (username) => {
 	// give that other player the option to play atother game
 });
 
+let timerInterval: number | null;
+let reactionTime: number | null;
+
+const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+
+
+socket.on("startTimer", () => {
+	console.log("Timer started!");
+	reactionTime = null;
+  
+	// Start a timer interval to update the UI
+	timerInterval = setInterval(() => {
+	  // Update UI with elapsed time
+	  // Implement this function based on your UI structure
+	}, 3000);
+});
+
+socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
+	console.log(`Player ${playerId} clicked on the virus!`);
+
+	if (timerInterval) {
+		clearInterval(timerInterval);
+		timerInterval = null;
+	}
+  
+	if (playerId === socket.id) {
+	  reactionTime = playerReactionTime;
+
+	   // Uppdatera UI med reaktionstiden för spelare 1
+	   if (player1pEl) {
+        player1pEl.innerText = `Reaktionstid: ${reactionTime} ms`;
+      }
+    } else {
+      // Uppdatera UI med reaktionstiden för spelare 2
+      if (player2pEl) {
+        player2pEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
+      }
+  
+	  // Update UI with player's reaction time
+	  // Implement this function based on your UI structure
+	}
+});
+
 // Create varible for username
 let username: string | null = null;
 let highScore = 0;

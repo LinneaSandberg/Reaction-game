@@ -8,6 +8,8 @@ export interface ServerToClientEvents {
     virusPosition: (position: number) => void;
     virusDelay: (data: VirusDelay) => void;
     playerLeft: (username: string) => void;
+    startTimer: () => void;
+    playerClicked: (event: PlayerClickedEvent) => void;
 }
 
 // Events emitted by the client to the server
@@ -39,5 +41,10 @@ export interface WaitingForPlayersEvent {
 export interface WaitingPlayers {
     players: Player;
     socketId: string;
+}
+
+export interface PlayerClickedEvent {
+    playerId: string;
+    reactionTime: number;
 }
 
