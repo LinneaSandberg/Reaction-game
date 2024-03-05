@@ -3,7 +3,11 @@
  */
 import Debug from "debug";
 import { Server, Socket } from "socket.io";
-import { ClientToServerEvents, ServerToClientEvents, WaitingPlayers } from "@shared/types/SocketTypes";
+import {
+	ClientToServerEvents,
+	ServerToClientEvents,
+	WaitingPlayers,
+} from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
 //import { virusPosition } from "./game_controller";
@@ -20,17 +24,23 @@ let virusStartTime: number;
 let player1ClickTime: number | null;
 let player2ClickTime: number | null;
 
+// Initialize variables for timer state
+let isGameRunning = false;
+let startTime: number;
+let intervalId: NodeJS.Timeout;
+export { isGameRunning, startTime, intervalId };
+
 
 // Handle a user connecting
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	debug("A player got connected 🏁", socket.id);
+	// debug("A player got connected 🏁", socket.id);
 
 	if (io.engine.clientsCount === 2) {
 		moveVirusAutomatically(io);
-	  }
+	}
 
 	  socket.on("hitVirus", () => {
 		debug(`Virus hit by ${socket.id}`);
@@ -52,10 +62,57 @@ export const handleConnection = (
 
 
 
-	  function moveVirusAutomatically(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+	function startTimer() {
+		if (!isGameRunning) {
+			isGameRunning = true;
+
+			startTime = Date.now();
+
+			// Emit a signal to all clients to start their timers
+			io.emit("startTimer", startTime);
+
+			// Update timer every millisecond
+			intervalId = setInterval(() => {
+				const elapsedTime = Date.now() - startTime;
+				// io.emit("updateTimer", elapsedTime);
+			}, 100);
+		}
+	}
+
+	function stopTimer(socketId: string) {
+		console.log("socketId", socketId);
+
+		const playerClicked = socketId;
+		console.log("playerClicked", playerClicked);
+
+		if (isGameRunning) {
+			isGameRunning = false;
+
+			// Clear the interval and calculate elapsed time
+			clearInterval(intervalId);
+			const elapsedTime = Date.now() - startTime;
+
+			// Emit a signal to all clients to stop their timers
+			io.emit("stopTimer", {
+				playerId: socket.id,
+				elapsedTime,
+			});
+			// }
+		}
+	}
+
+	socket.on("startTimer", () => {
+		startTimer();
+	});
+
+	socket.on("updateTimer", () => {});
+
+	function moveVirusAutomatically(
+		io: Server<ClientToServerEvents, ServerToClientEvents>
+	) {
 		const moveVirus = () => {
-		  const newVirusPosition = virusPosition();
-		  io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
+			const newVirusPosition = virusPosition();
+			io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
 
 		  virusActive = true;
 		  virusStartTime = Date.now();
@@ -66,40 +123,41 @@ export const handleConnection = (
 		  // Emit message to start the timer on the client
 		  io.emit("startTimer");
 
-		  const delay = virusDelay();
-		  setTimeout(moveVirus, delay);
+			const delay = virusDelay();
+			setTimeout(moveVirus, delay);
+
+			// debug(`Virus will move in ${delay}ms`);
+			// startTimer();
+			// debug("Starting timer");
 		};
 
 		moveVirus(); // Start moving the virus
-	  }
+	}
 
 	function virusPosition(): number {
 		return Math.floor(Math.random() * 25);
-		}
+	}
 
 	function virusDelay(): number {
 		return Math.floor(Math.random() * 9001) + 1000;
-		}
+	}
 
 	const initialVirusPosition = virusPosition();
-		socket.emit("virusPosition", initialVirusPosition);
+	socket.emit("virusPosition", initialVirusPosition);
 
-		// Handling a virus hit from a client
-		socket.on("hitVirus", () => {
-
+	// Handling a virus hit from a client
+	socket.on("hitVirus", () => {
+		stopTimer(socket.id);
 
 		// Calculate and emit new virus position
-	const newVirusPosition = virusPosition();
+		const newVirusPosition = virusPosition();
 		io.emit("virusPosition", newVirusPosition);
-		virusDelay()
-		});
-
-
+		virusDelay();
+	});
 
 	// Listen for player join request
 	socket.on("playerJoinRequest", async (username: string) => {
-		debug("Player %s want's to join the game!", socket.id);
-
+		// debug("Player %s want's to join the game!", socket.id);
 
 		const player = await prisma.player.create({
 			data: {
@@ -107,8 +165,7 @@ export const handleConnection = (
 				username,
 			},
 		});
-		debug("Player created: ", player);
-
+		// debug("Player created: ", player);
 
 		waitingPlayers.push({
 			players: {
@@ -125,7 +182,9 @@ export const handleConnection = (
 			const room = await prisma.game.create({
 				data: {
 					players: {
-						connect: playersInRoom.map((p) => ({ id: p.players.playerId })),
+						connect: playersInRoom.map((p) => ({
+							id: p.players.playerId,
+						})),
 					},
 				},
 				include: {
@@ -133,29 +192,37 @@ export const handleConnection = (
 				},
 			});
 
-			function initiateCountdown(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+			function initiateCountdown(
+				io: Server<ClientToServerEvents, ServerToClientEvents>
+			) {
 				let countdown = 3;
 				const countdownInterval = setInterval(() => {
-				  io.emit("countdown", countdown);
-				  countdown--;
-				  if (countdown < -1) { // Wait one interval after reaching 0 before clearing
-					clearInterval(countdownInterval);
-					setTimeout(() => {
-					  io.emit("startGame");
-					}, 100);
-				  }
+					io.emit("countdown", countdown);
+					countdown--;
+					if (countdown < -1) {
+						// Wait one interval after reaching 0 before clearing
+						clearInterval(countdownInterval);
+						setTimeout(() => {
+							io.emit("startGame");
+						}, 100);
+					}
 				}, 1000);
 			}
 
 			const roomId = room.id;
 			initiateCountdown(io);
 			playersInRoom.forEach((player) => {
-
-				io.to(player.socketId).emit("roomCreated", { roomId, players: playersInRoom.map(p => p.players) });
+				io.to(player.socketId).emit("roomCreated", {
+					roomId,
+					players: playersInRoom.map((p) => p.players),
+				});
 			});
-
+			// startTimer();
+			// debug("Starting timer");
 		} else {
-			io.to(socket.id).emit("waitingForPlayer", { message: "Waiting for another player to join!" });
+			io.to(socket.id).emit("waitingForPlayer", {
+				message: "waiting for another player to join!",
+			});
 		}
 	});
 
@@ -163,7 +230,9 @@ export const handleConnection = (
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
 
-		const index = waitingPlayers.findIndex((player) => player.socketId === socket.id);
+		const index = waitingPlayers.findIndex(
+			(player) => player.socketId === socket.id
+		);
 		if (index !== -1) {
 			waitingPlayers.splice(index, 1);
 		}
@@ -182,7 +251,7 @@ export const handleConnection = (
 		if (player.gameId) {
 			await prisma.game.update({
 				where: {
-					id: player.gameId
+					id: player.gameId,
 				},
 				data: {
 					players: {
@@ -202,4 +271,5 @@ export const handleConnection = (
 			io.to(player.gameId).emit("playerLeft", player.username);
 		}
 	});
+
 }
