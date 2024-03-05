@@ -15,8 +15,10 @@ const displayBoxEl = document.querySelector("#app") as HTMLDivElement;
 // display or no-display
 const startPageEl = document.querySelector("#startPage") as HTMLElement;
 const lobbyPageEl = document.querySelector("#lobbyPage") as HTMLElement;
+const countdownPageEl = document.querySelector("#countdownPage") as HTMLDivElement
+const countdownTimerEl = document.getElementById('countdownTimer') as HTMLDivElement
 const gamePageEl = document.querySelector("#gamePage") as HTMLElement;
-
+const gameFieldEl = document.querySelector(".game-field") as HTMLDivElement
 // start game 
 const startPageFormEl = document.querySelector(".startPageForm") as HTMLFormElement;
 const usernameInputEl = document.querySelector("#usernameInput") as HTMLInputElement;
@@ -219,6 +221,23 @@ socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
 	})
 
 });
+
+  socket.on("countdown", (seconds) => {
+	if (seconds > 0) {
+	  countdownPageEl.style.display = "flex"; 
+	  countdownTimerEl.innerText = `Game starts in ${seconds}...`;
+	} else {
+	  countdownTimerEl.innerText = "Goo!";
+	}
+  });
+  
+  socket.on("startGame", () => {
+	countdownPageEl.style.display = "none";
+	gameFieldEl.style.display = "flex";
+	
+	// Initialize or reset your game here
+  });
+  
 
 socket.on("virusPosition", (position) => {
     console.log(`New virus position: ${position}`);

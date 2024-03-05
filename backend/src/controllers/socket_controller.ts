@@ -54,7 +54,7 @@ export const handleConnection = (
 
 	  function moveVirusAutomatically(io: Server<ClientToServerEvents, ServerToClientEvents>) {
 		const moveVirus = () => {
-		  const newVirusPosition = calculateVirusPosition();
+		  const newVirusPosition = virusPosition();
 		  io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
 
 		  virusActive = true;
@@ -66,49 +66,35 @@ export const handleConnection = (
 		  // Emit message to start the timer on the client
 		  io.emit("startTimer");
 
-		  const delay = calculateDelay();
+		  const delay = virusDelay();
 		  setTimeout(moveVirus, delay);
-		  debug(`Virus will move in ${delay}ms`);
 		};
 
 		moveVirus(); // Start moving the virus
 	  }
 
-	function calculateVirusPosition(): number {
-		// Logic to calculate new virus position
-		return Math.floor(Math.random() * 25); // Example for a grid of 25 squares
+	function virusPosition(): number {
+		return Math.floor(Math.random() * 25);
 		}
 
-		function calculateDelay(): number {
-		// Logic to calculate the delay before the virus moves again
-		return Math.random() * 10000; // Random delay up to 10 seconds
+	function virusDelay(): number {
+		return Math.floor(Math.random() * 9001) + 1000;
 		}
 
-	const initialVirusPosition = calculateInitialVirusPosition();
+	const initialVirusPosition = virusPosition();
 		socket.emit("virusPosition", initialVirusPosition);
 
 		// Handling a virus hit from a client
 		socket.on("hitVirus", () => {
-		// Update game state as necessary
-		debug(`Virus hit by ${socket.id}`);
+
 
 		// Calculate and emit new virus position
-	const newVirusPosition = calculateNewVirusPosition();
-		io.emit("virusPosition", newVirusPosition); // Emit to all clients
+	const newVirusPosition = virusPosition();
+		io.emit("virusPosition", newVirusPosition);
+		virusDelay()
 		});
 
-		// Add more event listeners and logic as needed
 
-
-	function calculateInitialVirusPosition(): number {
-	// Logic to calculate initial virus position
-	return Math.floor(Math.random() * 25); // Assuming a grid of 25 squares for example
-	}
-
-	function calculateNewVirusPosition(): number {
-	// Logic to calculate new virus position after hit
-	return Math.floor(Math.random() * 25); // Assuming a grid of 25 squares for example
-	}
 
 	// Listen for player join request
 	socket.on("playerJoinRequest", async (username: string) => {
@@ -147,11 +133,27 @@ export const handleConnection = (
 				},
 			});
 
-			const roomId = room.id;
+			function initiateCountdown(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+				let countdown = 3;
+				const countdownInterval = setInterval(() => {
+				  io.emit("countdown", countdown);
+				  countdown--;
+				  if (countdown < -1) { // Wait one interval after reaching 0 before clearing
+					clearInterval(countdownInterval);
+					setTimeout(() => {
+					  io.emit("startGame");
+					}, 100);
+				  }
+				}, 1000);
+			}
 
+			const roomId = room.id;
+			initiateCountdown(io);
 			playersInRoom.forEach((player) => {
+
 				io.to(player.socketId).emit("roomCreated", { roomId, players: playersInRoom.map(p => p.players) });
 			});
+
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", { message: "Waiting for another player to join!" });
 		}
@@ -198,6 +200,6 @@ export const handleConnection = (
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
 			io.to(player.gameId).emit("playerLeft", player.username);
-		}		
+		}
 	});
 }
