@@ -53,8 +53,7 @@ player2pEl.innerHTML = `00:000`;
 let timerInterval: number | null;
 let reactionTime: number | null;
 let elapsedTime: number = 0;
-let player1ReactionTime: number | null = null;
-let player2ReactionTime: number | null = null;
+
 
 // Show waiting room
 const showWaitingRoom = () => {
@@ -164,8 +163,6 @@ socket.on("startTimer", () => {
 	console.log("Timer started!");
 	// reactionTime = null;
 	elapsedTime = 0;
-	player1ReactionTime = null;
-	player2ReactionTime = null;
 
   
 	// Start a timer interval to update the UI
