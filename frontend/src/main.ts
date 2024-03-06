@@ -40,6 +40,10 @@ const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
 const player1TimerEl = document.querySelector("#player1Timer") as HTMLParagraphElement;
 const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector("#player2Timer") as HTMLParagraphElement;
+const player1ReactiontimeEl = document.querySelector("#player1Reactiontime") as HTMLParagraphElement;
+const player2ReactiontimeEl = document.querySelector("#player2Reactiontime") as HTMLParagraphElement;
+
+
 
 player1pEl.innerHTML = `00:000`;
 player2pEl.innerHTML = `00:000`;
@@ -185,13 +189,13 @@ socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
 	  reactionTime = playerReactionTime;
 
 	   // Uppdatera UI med reaktionstiden för spelare 1
-	   if (player1pEl) {
-        player1pEl.innerText = `Reaktionstid: ${reactionTime} ms`;
+	   if (player1ReactiontimeEl) {
+      player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
       }
     } else {
       // Uppdatera UI med reaktionstiden för spelare 2
-      if (player2pEl) {
-        player2pEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
+      if (player2ReactiontimeEl) {
+        player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
       }
   
 	  // Update UI with player's reaction time

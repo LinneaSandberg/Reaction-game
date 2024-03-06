@@ -121,7 +121,7 @@ export const handleConnection = (
 		  
 		 
 		  // Emit message to start the timer on the client
-		  io.emit("startTimer");
+		  io.emit("startTimer", startTime);
 
 			const delay = virusDelay();
 			setTimeout(moveVirus, delay);

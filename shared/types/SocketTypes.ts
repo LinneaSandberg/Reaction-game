@@ -14,7 +14,6 @@ export interface ServerToClientEvents {
   countdown: (seconds: number) => void;
   startGame: () => void;
   playerClicked: (event: PlayerClickedEvent) => void;
-
 }
 
 // Events emitted by the client to the server
