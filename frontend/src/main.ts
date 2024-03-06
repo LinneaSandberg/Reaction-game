@@ -177,10 +177,10 @@ socket.on("startTimer", () => {
 socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
 	console.log(`Player ${playerId} clicked on the virus!`);
 
-	/* if (timerInterval) {
+	if (timerInterval) {
 		clearInterval(timerInterval);
 		timerInterval = null;
-	} */
+	}
   
 	if (playerId === socket.id) {
 	  reactionTime = playerReactionTime;
@@ -297,7 +297,7 @@ socket.on("virusPosition", (position) => {
 //Add event listener to each grid item to remove virus on click.
 
 gridItems.forEach((gridItem) => {
-  gridItem.addEventListener("click", (e) => {
+  gridItem.addEventListener("click", () => {
 	//e.preventDefault()
 	//e.stopPropagation()
     if (gridItem.classList.contains("virus")) {
