@@ -7,6 +7,7 @@ import {
 	ClientToServerEvents,
 	ServerToClientEvents,
 	WaitingPlayers,
+	UserSocketMap
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
@@ -28,7 +29,14 @@ let player2ClickTime: number | null;
 let isGameRunning = false;
 let startTime: number;
 let intervalId: NodeJS.Timeout;
-export { isGameRunning, startTime, intervalId };
+export { isGameRunning, startTime, intervalId }
+
+// Ett objekt för att lagra associationen mellan användarnamn och socket-ID
+let userSocketMap: UserSocketMap = {};
+
+//Rundor
+let currentRound = 0;
+const maxRounds = 10;
 
 
 // Handle a user connecting
@@ -36,20 +44,17 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-		// debug("A player got connected 🏁", socket.id);
-
 		// Listen for player join request
 		socket.on("playerJoinRequest", async (username: string) => {
-			// debug("Player %s want's to join the game!", socket.id);
-	
+			userSocketMap[username] = socket.id;
+
 			const player = await prisma.player.create({
 				data: {
 					id: socket.id,
 					username,
 				},
 			});
-			// debug("Player created: ", player);
-	
+
 			waitingPlayers.push({
 				players: {
 					playerId: socket.id,
@@ -57,10 +62,10 @@ export const handleConnection = (
 				},
 				socketId: socket.id,
 			});
-	
+
 			if (waitingPlayers.length >= 2) {
 				const playersInRoom = waitingPlayers.splice(0, 2);
-	
+
 				// Create a Game in MongoDB and retrive the room/game ID
 				const room = await prisma.game.create({
 					data: {
@@ -74,7 +79,7 @@ export const handleConnection = (
 						players: true,
 					},
 				});
-	
+
 				function initiateCountdown(
 					io: Server<ClientToServerEvents, ServerToClientEvents>
 				) {
@@ -91,7 +96,7 @@ export const handleConnection = (
 						}
 					}, 1000);
 				}
-	
+
 				const roomId = room.id;
 				initiateCountdown(io);
 				playersInRoom.forEach((player) => {
@@ -101,37 +106,12 @@ export const handleConnection = (
 					});
 				});
 				// startTimer();
-				// debug("Starting timer");
 			} else {
 				io.to(socket.id).emit("waitingForPlayer", {
 					message: "waiting for another player to join!",
 				});
 			}
 		});
-
-	if (io.engine.clientsCount === 2) {
-		moveVirusAutomatically(io);
-	}
-
-	//   socket.on("hitVirus", () => {
-	// 	debug(`Virus hit by ${socket.id}`);
-	// 	// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
-
-	// 	if (virusActive) {
-	// 		const clickTime = Date.now();
-	// 		const reactionTime = clickTime - virusStartTime;
-
-	// 		if (socket.id === "player1") {
-	// 			player1ClickTime = reactionTime;
-	// 		} else if (socket.id === "player2") {
-	// 			player2ClickTime = reactionTime;
-	// 		}
-
-	// 		io.emit("playerClicked", { playerId: socket.id, reactionTime });
-	// 	}
-	//   });
-
-
 
 	function startTimer() {
 		if (!isGameRunning) {
@@ -178,31 +158,14 @@ export const handleConnection = (
 
 	socket.on("updateTimer", () => {});
 
-	function moveVirusAutomatically(
-		io: Server<ClientToServerEvents, ServerToClientEvents>
-	) {
-		const moveVirus = () => {
-			const newVirusPosition = virusPosition();
-			io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
 
-		  virusActive = true;
-		  virusStartTime = Date.now();
-		  player1ClickTime = null;
-		  player2ClickTime = null;
+	function startGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+		const newVirusPosition = virusPosition();
+		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
+		io.emit("virusPosition", newVirusPosition); // Informera klienterna om den nya positionen
 
-
-		  // Emit message to start the timer on the client
-		  io.emit("startTimer", startTime);
-
-			const delay = virusDelay();
-			setTimeout(moveVirus, delay);
-
-			// debug(`Virus will move in ${delay}ms`);
-			// startTimer();
-			// debug("Starting timer");
-		};
-
-		//moveVirus(); // Start moving the virus
+		virusActive = true; // Tillåt viruset att bli "träffat" igen
+		virusStartTime = Date.now(); // Uppdatera starttiden för att beräkna reaktionstid
 	}
 
 	function virusPosition(): number {
@@ -213,31 +176,51 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 9001) + 1000;
 	}
 
-	const initialVirusPosition = virusPosition();
-	socket.emit("virusPosition", initialVirusPosition);
+	function startNewRound(io: Server) {
+		if (currentRound < maxRounds) {
+			//const newVirusPosition = virusPosition();
+			currentRound++;
+			startGame(io)
+			//io.emit("virusPosition", newVirusPosition);
+
+		} else {
+			endGame(io);
+		}
+	}
+
+	function endGame(io: Server) {
+		io.emit("gameOver");
+		currentRound = 0; // Återställ för nästa spel
+	}
 
 	// Handling a virus hit from a client
 	socket.on("hitVirus", () => {
-		stopTimer(socket.id);
 
-		if (virusActive) {
-			const clickTime = Date.now();
-			const reactionTime = clickTime - virusStartTime;
+	const username = socket.id; // Du skulle få detta dynamiskt på något sätt
+    const socketId = userSocketMap[username];
 
-			if (socket.id === "player1") {
-				player1ClickTime = reactionTime;
-			} else if (socket.id === "player2") {
-				player2ClickTime = reactionTime;
-			}
+	if (socketId && virusActive) {
+		virusActive = false;
+        const clickTime = Date.now();
+        const reactionTime = clickTime - virusStartTime; // Beräkna reaktionstid i millisekunder
 
-			io.emit("playerClicked", { playerId: socket.id, reactionTime });
-		}
+        // Logik för att uppdatera spelarens poäng eller status här...
 
-		// Calculate and emit new virus position
-		const newVirusPosition = virusPosition();
-		io.emit("virusPosition", newVirusPosition);
-		virusDelay();
-	});
+        // Sänd resultatet till alla klienter (eller bara till den berörda spelaren)
+        io.emit("playerClicked", {
+            playerId: socket.id,
+            reactionTime: reactionTime
+        });
+
+
+        if (currentRound < maxRounds) {
+            startNewRound(io);
+        } else {
+            endGame(io);
+        }
+    } // Starta ny runda eller avsluta spelet baserat på rundräknaren
+    });
+
 
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
