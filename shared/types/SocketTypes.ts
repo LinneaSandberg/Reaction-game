@@ -14,6 +14,8 @@ export interface ServerToClientEvents {
   countdown: (seconds: number) => void;
   startGame: () => void;
   playerClicked: (event: PlayerClickedEvent) => void;
+  virusHitConfirmed: () => void
+  gameOver: () => void
 }
 
 // Events emitted by the client to the server
@@ -24,7 +26,7 @@ export interface ClientToServerEvents {
     username: string,
     callback: (response: PlayerJoinResponse) => void
   ) => void;
-  hitVirus: () => void;
+  hitVirus: (username: string) => void;
   startTimer: () => void; // New event for starting the game
   stopTimer: (username: string) => void; // New event for stopping the game
   updateTimer: (elapsedTime: number, playerId: string) => void;
@@ -61,4 +63,8 @@ export interface stopTimerEvent {
 export interface PlayerClickedEvent {
     playerId: string;
     reactionTime: number;
+}
+
+export interface UserSocketMap {
+    [username: string]: string;
 }

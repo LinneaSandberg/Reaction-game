@@ -177,10 +177,10 @@ socket.on("startTimer", () => {
 socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
 	console.log(`Player ${playerId} clicked on the virus!`);
 
-	if (timerInterval) {
+	/* if (timerInterval) {
 		clearInterval(timerInterval);
 		timerInterval = null;
-	}
+	} */
   
 	if (playerId === socket.id) {
 	  reactionTime = playerReactionTime;
@@ -297,16 +297,23 @@ socket.on("virusPosition", (position) => {
 //Add event listener to each grid item to remove virus on click.
 
 gridItems.forEach((gridItem) => {
-  gridItem.addEventListener("mousedown", () => {
+  gridItem.addEventListener("click", (e) => {
+	//e.preventDefault()
+	//e.stopPropagation()
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
-      // console.log("Virus hit!💥");
       // socket.emit("stopTimer", "username");
+	  if(username) {
+	  socket.emit("hitVirus", username);
       console.log("Username som klickade", username);
-
-      socket.emit("hitVirus"); //Denna gör att "hit" skickas till servern MEN tas bort för båda.
+	}
       /* result++;
 			score.textContent += `${result}`; */
     }
   });
+});
+
+socket.on("gameOver", () => {
+    console.log("Spelet är över!");
+    // Visa resultat, erbjuda att starta nytt spel...
 });
