@@ -30,7 +30,6 @@ let startTime: number;
 let intervalId: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
 
-
 // Handle a user connecting
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -42,7 +41,7 @@ export const handleConnection = (
 		moveVirusAutomatically(io);
 	}
 
-	  socket.on("hitVirus", () => {
+	socket.on("hitVirus", () => {
 		debug(`Virus hit by ${socket.id}`);
 		// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
 
@@ -58,26 +57,24 @@ export const handleConnection = (
 
 			io.emit("playerClicked", { playerId: socket.id, reactionTime });
 		}
-	  });
+	});
 
+	// function startTimer() {
+	// 	if (!isGameRunning) {
+	// 		isGameRunning = true;
 
+	// 		startTime = Date.now();
 
-	function startTimer() {
-		if (!isGameRunning) {
-			isGameRunning = true;
+	// 		// Emit a signal to all clients to start their timers
+	// 		io.emit("startTimer");
 
-			startTime = Date.now();
-
-			// Emit a signal to all clients to start their timers
-			io.emit("startTimer", startTime);
-
-			// Update timer every millisecond
-			intervalId = setInterval(() => {
-				const elapsedTime = Date.now() - startTime;
-				// io.emit("updateTimer", elapsedTime);
-			}, 100);
-		}
-	}
+	// 		// Update timer every millisecond
+	// 		intervalId = setInterval(() => {
+	// 			const elapsedTime = Date.now() - startTime;
+	// 			// io.emit("updateTimer", elapsedTime);
+	// 		}, 100);
+	// 	}
+	// }
 
 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
@@ -102,7 +99,20 @@ export const handleConnection = (
 	}
 
 	socket.on("startTimer", () => {
-		startTimer();
+		if (!isGameRunning) {
+			isGameRunning = true;
+
+			startTime = Date.now();
+
+			// Emit a signal to all clients to start their timers
+			io.emit("startTimer");
+
+			// Update timer every millisecond
+			intervalId = setInterval(() => {
+				const elapsedTime = Date.now() - startTime;
+				io.emit("updateTimer", elapsedTime);
+			}, 100);
+		}
 	});
 
 	socket.on("updateTimer", () => {});
@@ -114,14 +124,14 @@ export const handleConnection = (
 			const newVirusPosition = virusPosition();
 			io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
 
-		  virusActive = true;
-		  virusStartTime = Date.now();
-		  player1ClickTime = null;
-		  player2ClickTime = null;
-		  
-		 
-		  // Emit message to start the timer on the client
-		  io.emit("startTimer", startTime);
+			virusActive = true;
+			virusStartTime = Date.now();
+			player1ClickTime = null;
+			player2ClickTime = null;
+
+			// Emit message to start the timer on the client
+			console.log("startTimer i moveVirusAutomatically");
+			io.emit("startTimer");
 
 			const delay = virusDelay();
 			setTimeout(moveVirus, delay);
@@ -131,7 +141,7 @@ export const handleConnection = (
 			// debug("Starting timer");
 		};
 
-		moveVirus(); // Start moving the virus
+		// moveVirus(); // Start moving the virus
 	}
 
 	function virusPosition(): number {
@@ -204,6 +214,7 @@ export const handleConnection = (
 						clearInterval(countdownInterval);
 						setTimeout(() => {
 							io.emit("startGame");
+							io.emit("startTimer");
 						}, 100);
 					}
 				}, 1000);
@@ -271,5 +282,4 @@ export const handleConnection = (
 			io.to(player.gameId).emit("playerLeft", player.username);
 		}
 	});
-
-}
+};

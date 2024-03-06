@@ -37,17 +37,26 @@ const gameFieldEl = document.querySelector(".game-field") as HTMLDivElement;
 
 // Result display
 const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
-const player1TimerEl = document.querySelector("#player1Timer") as HTMLParagraphElement;
+const player1TimerEl = document.querySelector(
+  "#player1Timer"
+) as HTMLParagraphElement;
 const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
-const player2TimerEl = document.querySelector("#player2Timer") as HTMLParagraphElement;
-const player1ReactiontimeEl = document.querySelector("#player1Reactiontime") as HTMLParagraphElement;
-const player2ReactiontimeEl = document.querySelector("#player2Reactiontime") as HTMLParagraphElement;
+const player2TimerEl = document.querySelector(
+  "#player2Timer"
+) as HTMLParagraphElement;
+const player1ReactiontimeEl = document.querySelector(
+  "#player1Reactiontime"
+) as HTMLParagraphElement;
+const player2ReactiontimeEl = document.querySelector(
+  "#player2Reactiontime"
+) as HTMLParagraphElement;
 
+// player1pEl.innerHTML = `00:000`;
+// player2pEl.innerHTML = `00:000`;
+let startTime: number;
 
-
-player1pEl.innerHTML = `00:000`;
-player2pEl.innerHTML = `00:000`;
-
+player1TimerEl.innerText = `00:000`;
+player2TimerEl.innerText = `00:000`;
 
 // Variables for timer and reationtime
 let timerInterval: number | null;
@@ -97,20 +106,24 @@ const usernamesDisplay = (username: string, opponent: string) => {
   player2.innerText = opponent || "Opponent";
 };
 
-const updateTimer = () => {
-	const seconds = Math.floor((elapsedTime % 60000) / 1000);
-	const milliseconds = elapsedTime % 1000;
+// Update timer to start counting from 0
+const updateTimer = (elapsedTime: number) => {
+  const seconds = Math.floor((elapsedTime % 60000) / 1000);
+  const milliseconds = elapsedTime % 1000;
+  // console.log("elapsedTime", elapsedTime);
 
-	const formattedTime = `${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+  const formattedTime = `${String(seconds).padStart(2, "0")}.${String(
+    milliseconds
+  ).padStart(3, "0")}`;
 
-	if (player1TimerEl) {
-		player1TimerEl.innerText = `player 1 ${formattedTime}`;
-	}
+  if (player1TimerEl) {
+    player1TimerEl.innerText = `${formattedTime}`;
+  }
 
-	if (player2TimerEl) {
-		player2TimerEl.innerText = `player 2 ${formattedTime}`;
-	}
-}
+  if (player2TimerEl) {
+    player2TimerEl.innerText = `${formattedTime}`;
+  }
+};
 
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
@@ -134,8 +147,9 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
+// listen for stopTimer
 socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  // console.log("PlayerId", playerId);
+  // console.log("elapsedTime", elapsedTime);
   const seconds = Math.floor(elapsedTime / 1000)
     .toString()
     .padStart(2, "0");
@@ -143,11 +157,17 @@ socket.on("stopTimer", ({ playerId, elapsedTime }) => {
 
   // if (player1pEl && playerId === socket.id) {
   if (player1pEl && playerId === socket.id) {
-    player1pEl.innerHTML = `${seconds}:${milliseconds}`;
+    player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
   } else if (player2pEl && playerId !== socket.id) {
-    player2pEl.innerHTML = `${seconds}:${milliseconds}`;
+    player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
   }
   // }
+});
+
+// Listen for updateTimer
+socket.on("updateTimer", (elapsedTime) => {
+  // Update UI with elapsed time
+  updateTimer(elapsedTime);
 });
 
 socket.on("playerLeft", (username) => {
@@ -159,48 +179,48 @@ socket.on("playerLeft", (username) => {
   // give that other player the option to play atother game
 });
 
+// socket.on("startTimer", () => {
+//   // console.log("Timer started!");
+//   reactionTime = null;
+//   // updateTimer();
 
-socket.on("startTimer", () => {
-	console.log("Timer started!");
-	// reactionTime = null;
-	elapsedTime = 0;
-	player1ReactionTime = null;
-	player2ReactionTime = null;
+//   elapsedTime = 0;
+//   player1ReactionTime = null;
+//   player2ReactionTime = null;
 
-  
-	// Start a timer interval to update the UI
-	timerInterval = setInterval(() => {
-		elapsedTime += 100;
-		updateTimer();
-	  // Update UI with elapsed time
-	  // Implement this function based on your UI structure
-	}, 100);
-});
+//   // Start a timer interval to update the UI
+//   timerInterval = setInterval(() => {
+//     elapsedTime += 100;
+//     updateTimer();
+//     // Update UI with elapsed time
+//     // Implement this function based on your UI structure
+//   }, 100);
+// });
 
 socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
-	console.log(`Player ${playerId} clicked on the virus!`);
+  console.log(`Player ${playerId} clicked on the virus!`);
 
-	if (timerInterval) {
-		clearInterval(timerInterval);
-		timerInterval = null;
-	}
-  
-	if (playerId === socket.id) {
-	  reactionTime = playerReactionTime;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
 
-	   // Uppdatera UI med reaktionstiden för spelare 1
-	   if (player1ReactiontimeEl) {
+  if (playerId === socket.id) {
+    reactionTime = playerReactionTime;
+
+    // Uppdatera UI med reaktionstiden för spelare 1
+    if (player1ReactiontimeEl) {
       player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
-      }
-    } else {
-      // Uppdatera UI med reaktionstiden för spelare 2
-      if (player2ReactiontimeEl) {
-        player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
-      }
-  
-	  // Update UI with player's reaction time
-	  // Implement this function based on your UI structure
-	}
+    }
+  } else {
+    // Uppdatera UI med reaktionstiden för spelare 2
+    if (player2ReactiontimeEl) {
+      player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
+    }
+
+    // Update UI with player's reaction time
+    // Implement this function based on your UI structure
+  }
 });
 
 // Create varible for username
@@ -251,6 +271,7 @@ startPageFormEl.addEventListener("submit", (e) => {
 
     // function to display the game-room
     showGameRoom();
+
     if (username && opponent) {
       usernamesDisplay(username, opponent);
     }
@@ -275,6 +296,7 @@ socket.on("startGame", () => {
   gameFieldEl.style.display = "flex";
 
   // Initialize or reset your game here
+  socket.emit("startTimer");
 });
 
 socket.on("virusPosition", (position) => {
@@ -293,6 +315,7 @@ socket.on("virusPosition", (position) => {
     newPosition < gridItems.length
   ) {
     gridItems[newPosition].classList.add("virus");
+
     socket.emit("startTimer");
   }
 });
