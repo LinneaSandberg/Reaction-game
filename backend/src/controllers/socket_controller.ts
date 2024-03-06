@@ -19,9 +19,7 @@ const debug = Debug("backend:socket_controller");
 // array of players waiting to play
 const waitingPlayers: WaitingPlayers[] = [];
 
-// variabler för timer och virus
-let virusActive = false;
-let virusStartTime: number;
+// variabler for timer and virus
 let player1ClickTime: number | null;
 let player2ClickTime: number | null;
 
@@ -31,22 +29,21 @@ let startTime: number;
 let intervalId: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId }
 
-// Ett objekt för att lagra associationen mellan användarnamn och socket-ID
+// Object to store relation between user and socketId
 let userSocketMap: UserSocketMap = {};
 
-//Rundor
+//Game variables
 let currentRound = 0;
 const maxRounds = 10;
+let virusActive = false;
+let virusStartTime: number;
 
-
-// Handle a user connecting
 export const handleConnection = (
-	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
-	io: Server<ClientToServerEvents, ServerToClientEvents>
+    socket: Socket<ClientToServerEvents, ServerToClientEvents>,
+    io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-		// Listen for player join request
-		socket.on("playerJoinRequest", async (username: string) => {
-			userSocketMap[username] = socket.id;
+    socket.on("playerJoinRequest", async (username: string) => {
+        userSocketMap[username] = socket.id;
 
 			const player = await prisma.player.create({
 				data: {
@@ -104,6 +101,7 @@ export const handleConnection = (
 						roomId,
 						players: playersInRoom.map((p) => p.players),
 					});
+					startNewRound(io);
 				});
 				// startTimer();
 			} else {
@@ -162,26 +160,20 @@ export const handleConnection = (
 	function startGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
 		const newVirusPosition = virusPosition();
 		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
-		io.emit("virusPosition", newVirusPosition); // Informera klienterna om den nya positionen
+		io.emit("virusPosition", newVirusPosition); // Inform players about the new position
 
-		virusActive = true; // Tillåt viruset att bli "träffat" igen
-		virusStartTime = Date.now(); // Uppdatera starttiden för att beräkna reaktionstid
+		virusActive = true; // Allow virus to be "hit" again
+		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 	}
 
 	function virusPosition(): number {
 		return Math.floor(Math.random() * 25);
 	}
 
-	function virusDelay(): number {
-		return Math.floor(Math.random() * 9001) + 1000;
-	}
-
 	function startNewRound(io: Server) {
 		if (currentRound < maxRounds) {
-			//const newVirusPosition = virusPosition();
 			currentRound++;
 			startGame(io)
-			//io.emit("virusPosition", newVirusPosition);
 
 		} else {
 			endGame(io);
@@ -195,33 +187,8 @@ export const handleConnection = (
 
 	// Handling a virus hit from a client
 	socket.on("hitVirus", () => {
-
-	const username = socket.id; // Du skulle få detta dynamiskt på något sätt
-    const socketId = userSocketMap[username];
-
-	if (socketId && virusActive) {
-		virusActive = false;
-        const clickTime = Date.now();
-        const reactionTime = clickTime - virusStartTime; // Beräkna reaktionstid i millisekunder
-
-        // Logik för att uppdatera spelarens poäng eller status här...
-
-        // Sänd resultatet till alla klienter (eller bara till den berörda spelaren)
-        io.emit("playerClicked", {
-            playerId: socket.id,
-            reactionTime: reactionTime
-        });
-
-
-        if (currentRound < maxRounds) {
-            startNewRound(io);
-        } else {
-            endGame(io);
-        }
-    } // Starta ny runda eller avsluta spelet baserat på rundräknaren
+        handleVirusHit(socket.id, io);
     });
-
-
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
@@ -269,3 +236,36 @@ export const handleConnection = (
 	});
 
 }
+
+	function handleVirusHit(socketId: string, io: Server<ClientToServerEvents, ServerToClientEvents>) {
+		if (!virusActive) return;
+
+		virusActive = false; // Förhindra fler träffar tills nästa runda startar
+		const clickTime = Date.now();
+		const reactionTime = clickTime - virusStartTime;
+
+		io.emit("playerClicked", { playerId: socketId, reactionTime });
+		currentRound++;
+
+		if (currentRound < maxRounds) {
+			startNewRound(io);
+		} else {
+			endGame(io);
+		}
+	}
+
+	function startNewRound(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+    	let delay = Math.floor(Math.random() * 9000) + 1000; // 1 till 10 sekunder
+			setTimeout(() => {
+			virusStartTime = Date.now();
+			virusActive = true;
+		let position = Math.floor(Math.random() * 25);
+			io.emit("virusPosition", position);
+			}, delay);
+		}
+
+	function endGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+    	io.emit("gameOver");
+    	// Återställa spelets tillståndsvariabler här ev.
+    	currentRound = 0;
+	}
