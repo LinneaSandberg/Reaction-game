@@ -189,8 +189,8 @@ export const handleConnection = (
 		  virusStartTime = Date.now();
 		  player1ClickTime = null;
 		  player2ClickTime = null;
-		  
-		 
+
+
 		  // Emit message to start the timer on the client
 		  io.emit("startTimer", startTime);
 
@@ -202,7 +202,7 @@ export const handleConnection = (
 			// debug("Starting timer");
 		};
 
-		moveVirus(); // Start moving the virus
+		//moveVirus(); // Start moving the virus
 	}
 
 	function virusPosition(): number {
