@@ -303,7 +303,7 @@ gridItems.forEach((gridItem) => {
   gridItem.addEventListener("mousedown", () => {
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
-      console.log("Virus hit!💥");
+      // console.log("Virus hit!💥");
       // socket.emit("stopTimer", "username");
       console.log("Username som klickade", username);
 

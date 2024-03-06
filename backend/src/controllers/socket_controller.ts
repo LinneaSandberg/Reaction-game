@@ -36,29 +36,100 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	// debug("A player got connected 🏁", socket.id);
+		// debug("A player got connected 🏁", socket.id);
+
+		// Listen for player join request
+		socket.on("playerJoinRequest", async (username: string) => {
+			// debug("Player %s want's to join the game!", socket.id);
+	
+			const player = await prisma.player.create({
+				data: {
+					id: socket.id,
+					username,
+				},
+			});
+			// debug("Player created: ", player);
+	
+			waitingPlayers.push({
+				players: {
+					playerId: socket.id,
+					username: username,
+				},
+				socketId: socket.id,
+			});
+	
+			if (waitingPlayers.length >= 2) {
+				const playersInRoom = waitingPlayers.splice(0, 2);
+	
+				// Create a Game in MongoDB and retrive the room/game ID
+				const room = await prisma.game.create({
+					data: {
+						players: {
+							connect: playersInRoom.map((p) => ({
+								id: p.players.playerId,
+							})),
+						},
+					},
+					include: {
+						players: true,
+					},
+				});
+	
+				function initiateCountdown(
+					io: Server<ClientToServerEvents, ServerToClientEvents>
+				) {
+					let countdown = 3;
+					const countdownInterval = setInterval(() => {
+						io.emit("countdown", countdown);
+						countdown--;
+						if (countdown < -1) {
+							// Wait one interval after reaching 0 before clearing
+							clearInterval(countdownInterval);
+							setTimeout(() => {
+								io.emit("startGame");
+							}, 100);
+						}
+					}, 1000);
+				}
+	
+				const roomId = room.id;
+				initiateCountdown(io);
+				playersInRoom.forEach((player) => {
+					io.to(player.socketId).emit("roomCreated", {
+						roomId,
+						players: playersInRoom.map((p) => p.players),
+					});
+				});
+				// startTimer();
+				// debug("Starting timer");
+			} else {
+				io.to(socket.id).emit("waitingForPlayer", {
+					message: "waiting for another player to join!",
+				});
+			}
+		});
 
 	if (io.engine.clientsCount === 2) {
 		moveVirusAutomatically(io);
 	}
 
-	  socket.on("hitVirus", () => {
-		debug(`Virus hit by ${socket.id}`);
-		// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
+	//   socket.on("hitVirus", () => {
+	// 	debug(`Virus hit by ${socket.id}`);
+	// 	// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
 
-		if (virusActive) {
-			const clickTime = Date.now();
-			const reactionTime = clickTime - virusStartTime;
+	// 	if (virusActive) {
+	// 		const clickTime = Date.now();
+	// 		const reactionTime = clickTime - virusStartTime;
 
-			if (socket.id === "player1") {
-				player1ClickTime = reactionTime;
-			} else if (socket.id === "player2") {
-				player2ClickTime = reactionTime;
-			}
+	// 		if (socket.id === "player1") {
+	// 			player1ClickTime = reactionTime;
+	// 		} else if (socket.id === "player2") {
+	// 			player2ClickTime = reactionTime;
+	// 		}
 
-			io.emit("playerClicked", { playerId: socket.id, reactionTime });
-		}
-	  });
+	// 		io.emit("playerClicked", { playerId: socket.id, reactionTime });
+	// 	}
+	//   });
 
 
 
@@ -149,81 +220,23 @@ export const handleConnection = (
 	socket.on("hitVirus", () => {
 		stopTimer(socket.id);
 
+		if (virusActive) {
+			const clickTime = Date.now();
+			const reactionTime = clickTime - virusStartTime;
+
+			if (socket.id === "player1") {
+				player1ClickTime = reactionTime;
+			} else if (socket.id === "player2") {
+				player2ClickTime = reactionTime;
+			}
+
+			io.emit("playerClicked", { playerId: socket.id, reactionTime });
+		}
+
 		// Calculate and emit new virus position
 		const newVirusPosition = virusPosition();
 		io.emit("virusPosition", newVirusPosition);
 		virusDelay();
-	});
-
-	// Listen for player join request
-	socket.on("playerJoinRequest", async (username: string) => {
-		// debug("Player %s want's to join the game!", socket.id);
-
-		const player = await prisma.player.create({
-			data: {
-				id: socket.id,
-				username,
-			},
-		});
-		// debug("Player created: ", player);
-
-		waitingPlayers.push({
-			players: {
-				playerId: socket.id,
-				username: username,
-			},
-			socketId: socket.id,
-		});
-
-		if (waitingPlayers.length >= 2) {
-			const playersInRoom = waitingPlayers.splice(0, 2);
-
-			// Create a Game in MongoDB and retrive the room/game ID
-			const room = await prisma.game.create({
-				data: {
-					players: {
-						connect: playersInRoom.map((p) => ({
-							id: p.players.playerId,
-						})),
-					},
-				},
-				include: {
-					players: true,
-				},
-			});
-
-			function initiateCountdown(
-				io: Server<ClientToServerEvents, ServerToClientEvents>
-			) {
-				let countdown = 3;
-				const countdownInterval = setInterval(() => {
-					io.emit("countdown", countdown);
-					countdown--;
-					if (countdown < -1) {
-						// Wait one interval after reaching 0 before clearing
-						clearInterval(countdownInterval);
-						setTimeout(() => {
-							io.emit("startGame");
-						}, 100);
-					}
-				}, 1000);
-			}
-
-			const roomId = room.id;
-			initiateCountdown(io);
-			playersInRoom.forEach((player) => {
-				io.to(player.socketId).emit("roomCreated", {
-					roomId,
-					players: playersInRoom.map((p) => p.players),
-				});
-			});
-			// startTimer();
-			// debug("Starting timer");
-		} else {
-			io.to(socket.id).emit("waitingForPlayer", {
-				message: "waiting for another player to join!",
-			});
-		}
 	});
 
 	// handler for disconnecting
