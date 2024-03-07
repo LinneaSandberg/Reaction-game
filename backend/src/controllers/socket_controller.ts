@@ -101,7 +101,7 @@ export const handleConnection = (
 						roomId,
 						players: playersInRoom.map((p) => p.players),
 					});
-					startNewRound(io);
+					newRound(io);
 				});
 				// startTimer();
 			} else {
@@ -170,17 +170,17 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 25);
 	}
 
-	function startNewRound(io: Server) {
+	function newRound(io: Server) {
 		if (currentRound < maxRounds) {
 			currentRound++;
 			startGame(io)
 
 		} else {
-			endGame(io);
+			quitGame(io);
 		}
 	}
 
-	function endGame(io: Server) {
+	function quitGame(io: Server) {
 		io.emit("gameOver");
 		currentRound = 0; // Återställ för nästa spel
 	}
@@ -235,14 +235,14 @@ export const handleConnection = (
 		}
 	});
 
-}
-
 	function handleVirusHit(socketId: string, io: Server<ClientToServerEvents, ServerToClientEvents>) {
 		if (!virusActive) return;
 
 		virusActive = false; // Förhindra fler träffar tills nästa runda startar
 		const clickTime = Date.now();
 		const reactionTime = clickTime - virusStartTime;
+
+		// stopTimer(socket.id);
 
 		io.emit("playerClicked", { playerId: socketId, reactionTime });
 		currentRound++;
@@ -269,3 +269,5 @@ export const handleConnection = (
     	// Återställa spelets tillståndsvariabler här ev.
     	currentRound = 0;
 	}
+
+}
