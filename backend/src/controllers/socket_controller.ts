@@ -102,7 +102,7 @@ export const handleConnection = (
 					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				startNewRound(io);
+				newRound(io);
 			});
 			// startTimer();
 		} else {
@@ -185,16 +185,16 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 25);
 	}
 
-	function startNewRound(io: Server) {
+	function newRound(io: Server) {
 		if (currentRound < maxRounds) {
 			currentRound++;
 			startGame(io);
 		} else {
-			endGame(io);
+			quitGame(io);
 		}
 	}
 
-	function endGame(io: Server) {
+	function quitGame(io: Server) {
 		io.emit("gameOver");
 		currentRound = 0; // Återställ för nästa spel
 	}
@@ -249,40 +249,42 @@ export const handleConnection = (
 			io.to(player.gameId).emit("playerLeft", player.username);
 		}
 	});
-};
 
-function handleVirusHit(
-	socketId: string,
-	io: Server<ClientToServerEvents, ServerToClientEvents>
-) {
-	if (!virusActive) return;
+	function handleVirusHit(
+		socketId: string,
+		io: Server<ClientToServerEvents, ServerToClientEvents>
+	) {
+		if (!virusActive) return;
 
-	virusActive = false; // Förhindra fler träffar tills nästa runda startar
-	const clickTime = Date.now();
-	const reactionTime = clickTime - virusStartTime;
+		virusActive = false; // Förhindra fler träffar tills nästa runda startar
+		const clickTime = Date.now();
+		const reactionTime = clickTime - virusStartTime;
 
-	// io.emit("playerClicked", { playerId: socketId, reactionTime });
-	currentRound++;
+		// io.emit("playerClicked", { playerId: socketId, reactionTime });
+		currentRound++;
 
-	if (currentRound < maxRounds) {
-		startNewRound(io);
-	} else {
-		endGame(io);
+		if (currentRound < maxRounds) {
+			startNewRound(io);
+		} else {
+			endGame(io);
+		}
 	}
-}
 
-function startNewRound(io: Server<ClientToServerEvents, ServerToClientEvents>) {
-	let delay = Math.floor(Math.random() * 9000) + 1000; // 1 till 10 sekunder
-	setTimeout(() => {
-		virusStartTime = Date.now();
-		virusActive = true;
-		let position = Math.floor(Math.random() * 25);
-		io.emit("virusPosition", position);
-	}, delay);
-}
+	function startNewRound(
+		io: Server<ClientToServerEvents, ServerToClientEvents>
+	) {
+		let delay = Math.floor(Math.random() * 9000) + 1000; // 1 till 10 sekunder
+		setTimeout(() => {
+			virusStartTime = Date.now();
+			virusActive = true;
+			let position = Math.floor(Math.random() * 25);
+			io.emit("virusPosition", position);
+		}, delay);
+	}
 
-function endGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
-	io.emit("gameOver");
-	// Återställa spelets tillståndsvariabler här ev.
-	currentRound = 0;
-}
+	function endGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+		io.emit("gameOver");
+		// Återställa spelets tillståndsvariabler här ev.
+		currentRound = 0;
+	}
+};
