@@ -228,8 +228,6 @@ export const handleConnection = (
 					players: playersInRoom.map((p) => p.players),
 				});
 			});
-			// startTimer();
-			// debug("Starting timer");
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",

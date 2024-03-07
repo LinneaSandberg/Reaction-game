@@ -75,6 +75,7 @@ const showWaitingRoom = () => {
 const showGameRoom = () => {
   gamePageEl.classList.remove("hide");
   lobbyPageEl.classList.add("hide");
+  console.log("Nu börjar spelet");
 };
 
 // Show player that the other player left
@@ -231,7 +232,7 @@ let username: string | null = null;
 startPageFormEl.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  console.log("It works to click the button!");
+  // console.log("It works to click the button!");
 
   // Trim the input-value
   const trimmedUsername = usernameInputEl.value.trim();
