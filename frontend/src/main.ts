@@ -284,9 +284,9 @@ startPageFormEl.addEventListener("submit", (e) => {
 socket.on("countdown", (seconds) => {
   if (seconds > 0) {
     countdownPageEl.style.display = "flex";
-    countdownTimerEl.innerText = `Game starts in ${seconds}...`;
+    countdownTimerEl.innerHTML = `Game starts in </br> ${seconds}`;
   } else {
-    countdownTimerEl.innerText = "Goo!";
+    countdownTimerEl.innerHTML = "Goo!";
   }
 });
 

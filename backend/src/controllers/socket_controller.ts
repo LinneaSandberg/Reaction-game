@@ -27,6 +27,7 @@ let player2ClickTime: number | null;
 let isGameRunning = false;
 let startTime: number;
 let intervalId: NodeJS.Timeout;
+let timeoutTimer: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
 
 // Object to store relation between user and socketId
@@ -180,6 +181,14 @@ export const handleConnection = (
 
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
+
+		if (timeoutTimer) clearTimeout(timeoutTimer);
+        timeoutTimer = setTimeout(() => {
+            console.log("Uteblivet klick inom 30 sek.🐌");
+            newRound(io);
+			currentRound++;
+			console.log(currentRound)
+        }, 30000);
 	}
 
 	function virusPosition(): number {
@@ -190,14 +199,15 @@ export const handleConnection = (
 		if (currentRound < maxRounds) {
 			currentRound++;
 			startGame(io);
+			console.log(currentRound)
 		} else {
-			quitGame(io);
+			endGame(io);
 		}
 	}
 
-	function quitGame(io: Server) {
+	function endGame(io: Server) {
 		io.emit("gameOver");
-		currentRound = 0; // Återställ för nästa spel
+		currentRound = 0;
 	}
 
 	// Handling a virus hit from a client
@@ -256,7 +266,7 @@ export const handleConnection = (
 		io: Server<ClientToServerEvents, ServerToClientEvents>
 	) {
 		if (!virusActive) return;
-
+		clearTimeout(timeoutTimer);
 		virusActive = false; // Förhindra fler träffar tills nästa runda startar
 		const clickTime = Date.now();
 		const reactionTime = clickTime - virusStartTime;
@@ -265,7 +275,7 @@ export const handleConnection = (
 
 		// io.emit("playerClicked", { playerId: socketId, reactionTime });
 		currentRound++;
-
+		console.log(currentRound)
 		if (currentRound < maxRounds) {
 			startNewRound(io);
 		} else {
@@ -283,11 +293,5 @@ export const handleConnection = (
 			let position = Math.floor(Math.random() * 25);
 			io.emit("virusPosition", position);
 		}, delay);
-	}
-
-	function endGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
-		io.emit("gameOver");
-		// Återställa spelets tillståndsvariabler här ev.
-		currentRound = 0;
 	}
 };
