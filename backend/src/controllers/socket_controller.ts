@@ -269,5 +269,4 @@ export const handleConnection = (
     	// Återställa spelets tillståndsvariabler här ev.
     	currentRound = 0;
 	}
-
 }
