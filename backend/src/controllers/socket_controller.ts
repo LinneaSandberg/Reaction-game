@@ -254,9 +254,15 @@ export const handleConnection = (
 		// Remove player after he plays
 		await deletePlayer(socket.id);
 
+		// const gameRoom = player.gameId; 
+		// console.log("Game with id: ", gameRoom);
+		console.log("player.gameId", player.gameId);
+
+
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
-			io.to(player.gameId).emit("playerLeft", player.username);
+			console.log("player.gameId", player.gameId);
+			io.emit("playerLeft", { playerId: player.id });
 		}
 	});
 

@@ -10,7 +10,7 @@ export interface ServerToClientEvents {
   startTimer: () => void;
   stopTimer: (event: stopTimerEvent) => void;
   updateTimer: (elapsedTime: number) => void;
-  playerLeft: (username: string) => void;
+  playerLeft: (event: PlayerLeftEvent) => void;
   countdown: (seconds: number) => void;
   startGame: () => void;
   playerClicked: (event: PlayerClickedEvent) => void;
@@ -67,4 +67,8 @@ export interface PlayerClickedEvent {
 
 export interface UserSocketMap {
     [username: string]: string;
+}
+
+export interface PlayerLeftEvent {
+  playerId: string;
 }
