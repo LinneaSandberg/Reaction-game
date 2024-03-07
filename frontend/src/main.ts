@@ -44,12 +44,12 @@ const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector(
   "#player2Timer"
 ) as HTMLParagraphElement;
-const player1ReactiontimeEl = document.querySelector(
-  "#player1Reactiontime"
-) as HTMLParagraphElement;
-const player2ReactiontimeEl = document.querySelector(
-  "#player2Reactiontime"
-) as HTMLParagraphElement;
+// const player1ReactiontimeEl = document.querySelector(
+//   "#player1Reactiontime"
+// ) as HTMLParagraphElement;
+// const player2ReactiontimeEl = document.querySelector(
+//   "#player2Reactiontime"
+// ) as HTMLParagraphElement;
 
 // player1pEl.innerHTML = `00:000`;
 // player2pEl.innerHTML = `00:000`;
@@ -59,8 +59,8 @@ player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
 
 // Variables for timer and reationtime
-let timerInterval: number | null;
-let reactionTime: number | null;
+// let timerInterval: number | null;
+// let reactionTime: number | null;
 // let elapsedTime: number = 0;
 
 // Show waiting room
@@ -196,31 +196,31 @@ socket.on("playerLeft", (username) => {
 //   }, 100);
 // });
 
-socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
-  console.log(`Player ${playerId} clicked on the virus!`);
+// socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
+//   console.log(`Player ${playerId} clicked on the virus!`);
 
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+//   if (timerInterval) {
+//     clearInterval(timerInterval);
+//     timerInterval = null;
+//   }
 
-  if (playerId === socket.id) {
-    reactionTime = playerReactionTime;
+//   if (playerId === socket.id) {
+//     reactionTime = playerReactionTime;
 
-    // Uppdatera UI med reaktionstiden för spelare 1
-    if (player1ReactiontimeEl) {
-      player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
-    }
-  } else {
-    // Uppdatera UI med reaktionstiden för spelare 2
-    if (player2ReactiontimeEl) {
-      player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
-    }
+//     // Uppdatera UI med reaktionstiden för spelare 1
+//     if (player1ReactiontimeEl) {
+//       player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
+//     }
+//   } else {
+//     // Uppdatera UI med reaktionstiden för spelare 2
+//     if (player2ReactiontimeEl) {
+//       player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
+//     }
 
-    // Update UI with player's reaction time
-    // Implement this function based on your UI structure
-  }
-});
+//     // Update UI with player's reaction time
+//     // Implement this function based on your UI structure
+//   }
+// });
 
 // Create varible for username
 let username: string | null = null;
@@ -295,6 +295,7 @@ socket.on("startGame", () => {
   gameFieldEl.style.display = "flex";
 
   // Initialize or reset your game here
+  console.log("StartTimer i startGame");
   socket.emit("startTimer");
 });
 
@@ -314,6 +315,8 @@ socket.on("virusPosition", (position) => {
     newPosition < gridItems.length
   ) {
     gridItems[newPosition].classList.add("virus");
+
+    console.log("StartTimer i newPosition");
 
     socket.emit("startTimer");
   }

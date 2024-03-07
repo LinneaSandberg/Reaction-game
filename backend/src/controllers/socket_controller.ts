@@ -89,7 +89,7 @@ export const handleConnection = (
 						clearInterval(countdownInterval);
 						setTimeout(() => {
 							io.emit("startGame");
-							io.emit("startTimer");
+							// io.emit("startTimer");
 						}, 100);
 					}
 				}, 1000);
@@ -137,6 +137,7 @@ export const handleConnection = (
 
 		if (isGameRunning) {
 			isGameRunning = false;
+			console.log("startTime i stopTimer function", startTime);
 
 			// Clear the interval and calculate elapsed time
 			clearInterval(intervalId);
@@ -202,7 +203,7 @@ export const handleConnection = (
 	// Handling a virus hit from a client
 	socket.on("hitVirus", () => {
 		handleVirusHit(socket.id, io);
-		stopTimer(socket.id);
+		// stopTimer(socket.id);
 	});
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
@@ -259,6 +260,8 @@ export const handleConnection = (
 		virusActive = false; // Förhindra fler träffar tills nästa runda startar
 		const clickTime = Date.now();
 		const reactionTime = clickTime - virusStartTime;
+
+		stopTimer(socket.id);
 
 		// io.emit("playerClicked", { playerId: socketId, reactionTime });
 		currentRound++;
