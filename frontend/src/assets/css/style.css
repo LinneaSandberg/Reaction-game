@@ -134,11 +134,11 @@ li {
   justify-content: center;
   align-items: center;
   font-weight: bold;
-  color: limegreen;
-  background-color: #f0f0f0; /* Light grey, adjust as needed */
+  color: yellowgreen;
+  background-color: grey;
 }
 
 #countdownTimer {
-  font-size: 5rem;
+  font-size: 6rem;
   text-align: center;
 }
