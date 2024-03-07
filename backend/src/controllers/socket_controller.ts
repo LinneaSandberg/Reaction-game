@@ -7,6 +7,7 @@ import {
 	ClientToServerEvents,
 	ServerToClientEvents,
 	WaitingPlayers,
+	UserSocketMap,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
@@ -18,9 +19,7 @@ const debug = Debug("backend:socket_controller");
 // array of players waiting to play
 const waitingPlayers: WaitingPlayers[] = [];
 
-// variabler för timer och virus
-let virusActive = false;
-let virusStartTime: number;
+// variabler for timer and virus
 let player1ClickTime: number | null;
 let player2ClickTime: number | null;
 
@@ -30,32 +29,86 @@ let startTime: number;
 let intervalId: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
 
-// Handle a user connecting
+// Object to store relation between user and socketId
+let userSocketMap: UserSocketMap = {};
+
+//Game variables
+let currentRound = 0;
+const maxRounds = 10;
+let virusActive = false;
+let virusStartTime: number;
+
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	// debug("A player got connected 🏁", socket.id);
+	socket.on("playerJoinRequest", async (username: string) => {
+		userSocketMap[username] = socket.id;
 
-	if (io.engine.clientsCount === 2) {
-		moveVirusAutomatically(io);
-	}
+		const player = await prisma.player.create({
+			data: {
+				id: socket.id,
+				username,
+			},
+		});
 
-	socket.on("hitVirus", () => {
-		debug(`Virus hit by ${socket.id}`);
-		// licket i front-end ska komma hit från front end och här hanterar vi poängen för spelaren !?
+		waitingPlayers.push({
+			players: {
+				playerId: socket.id,
+				username: username,
+			},
+			socketId: socket.id,
+		});
 
-		if (virusActive) {
-			const clickTime = Date.now();
-			const reactionTime = clickTime - virusStartTime;
+		if (waitingPlayers.length >= 2) {
+			const playersInRoom = waitingPlayers.splice(0, 2);
 
-			if (socket.id === "player1") {
-				player1ClickTime = reactionTime;
-			} else if (socket.id === "player2") {
-				player2ClickTime = reactionTime;
+			// Create a Game in MongoDB and retrive the room/game ID
+			const room = await prisma.game.create({
+				data: {
+					players: {
+						connect: playersInRoom.map((p) => ({
+							id: p.players.playerId,
+						})),
+					},
+				},
+				include: {
+					players: true,
+				},
+			});
+
+			function initiateCountdown(
+				io: Server<ClientToServerEvents, ServerToClientEvents>
+			) {
+				let countdown = 3;
+				const countdownInterval = setInterval(() => {
+					io.emit("countdown", countdown);
+					countdown--;
+					if (countdown < -1) {
+						// Wait one interval after reaching 0 before clearing
+						clearInterval(countdownInterval);
+						setTimeout(() => {
+							io.emit("startGame");
+							io.emit("startTimer");
+						}, 100);
+					}
+				}, 1000);
 			}
 
-			io.emit("playerClicked", { playerId: socket.id, reactionTime });
+			const roomId = room.id;
+			initiateCountdown(io);
+			playersInRoom.forEach((player) => {
+				io.to(player.socketId).emit("roomCreated", {
+					roomId,
+					players: playersInRoom.map((p) => p.players),
+				});
+				startNewRound(io);
+			});
+			// startTimer();
+		} else {
+			io.to(socket.id).emit("waitingForPlayer", {
+				message: "waiting for another player to join!",
+			});
 		}
 	});
 
@@ -117,124 +170,40 @@ export const handleConnection = (
 
 	socket.on("updateTimer", () => {});
 
-	function moveVirusAutomatically(
-		io: Server<ClientToServerEvents, ServerToClientEvents>
-	) {
-		const moveVirus = () => {
-			const newVirusPosition = virusPosition();
-			io.emit("virusPosition", newVirusPosition); // Emit new position to all clients
+	function startGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+		const newVirusPosition = virusPosition();
+		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
+		io.emit("virusPosition", newVirusPosition); // Inform players about the new position
 
-			virusActive = true;
-			virusStartTime = Date.now();
-			player1ClickTime = null;
-			player2ClickTime = null;
+		io.emit("startTimer");
 
-			// Emit message to start the timer on the client
-			console.log("startTimer i moveVirusAutomatically");
-			io.emit("startTimer");
-
-			const delay = virusDelay();
-			setTimeout(moveVirus, delay);
-
-			// debug(`Virus will move in ${delay}ms`);
-			// startTimer();
-			// debug("Starting timer");
-		};
-
-		// moveVirus(); // Start moving the virus
+		virusActive = true; // Allow virus to be "hit" again
+		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 	}
 
 	function virusPosition(): number {
 		return Math.floor(Math.random() * 25);
 	}
 
-	function virusDelay(): number {
-		return Math.floor(Math.random() * 9001) + 1000;
+	function startNewRound(io: Server) {
+		if (currentRound < maxRounds) {
+			currentRound++;
+			startGame(io);
+		} else {
+			endGame(io);
+		}
 	}
 
-	const initialVirusPosition = virusPosition();
-	socket.emit("virusPosition", initialVirusPosition);
+	function endGame(io: Server) {
+		io.emit("gameOver");
+		currentRound = 0; // Återställ för nästa spel
+	}
 
 	// Handling a virus hit from a client
 	socket.on("hitVirus", () => {
+		handleVirusHit(socket.id, io);
 		stopTimer(socket.id);
-
-		// Calculate and emit new virus position
-		const newVirusPosition = virusPosition();
-		io.emit("virusPosition", newVirusPosition);
-		virusDelay();
 	});
-
-	// Listen for player join request
-	socket.on("playerJoinRequest", async (username: string) => {
-		// debug("Player %s want's to join the game!", socket.id);
-
-		const player = await prisma.player.create({
-			data: {
-				id: socket.id,
-				username,
-			},
-		});
-		// debug("Player created: ", player);
-
-		waitingPlayers.push({
-			players: {
-				playerId: socket.id,
-				username: username,
-			},
-			socketId: socket.id,
-		});
-
-		if (waitingPlayers.length >= 2) {
-			const playersInRoom = waitingPlayers.splice(0, 2);
-
-			// Create a Game in MongoDB and retrive the room/game ID
-			const room = await prisma.game.create({
-				data: {
-					players: {
-						connect: playersInRoom.map((p) => ({
-							id: p.players.playerId,
-						})),
-					},
-				},
-				include: {
-					players: true,
-				},
-			});
-
-			function initiateCountdown(
-				io: Server<ClientToServerEvents, ServerToClientEvents>
-			) {
-				let countdown = 3;
-				const countdownInterval = setInterval(() => {
-					io.emit("countdown", countdown);
-					countdown--;
-					if (countdown < -1) {
-						// Wait one interval after reaching 0 before clearing
-						clearInterval(countdownInterval);
-						setTimeout(() => {
-							io.emit("startGame");
-							io.emit("startTimer");
-						}, 100);
-					}
-				}, 1000);
-			}
-
-			const roomId = room.id;
-			initiateCountdown(io);
-			playersInRoom.forEach((player) => {
-				io.to(player.socketId).emit("roomCreated", {
-					roomId,
-					players: playersInRoom.map((p) => p.players),
-				});
-			});
-		} else {
-			io.to(socket.id).emit("waitingForPlayer", {
-				message: "waiting for another player to join!",
-			});
-		}
-	});
-
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
@@ -281,3 +250,39 @@ export const handleConnection = (
 		}
 	});
 };
+
+function handleVirusHit(
+	socketId: string,
+	io: Server<ClientToServerEvents, ServerToClientEvents>
+) {
+	if (!virusActive) return;
+
+	virusActive = false; // Förhindra fler träffar tills nästa runda startar
+	const clickTime = Date.now();
+	const reactionTime = clickTime - virusStartTime;
+
+	// io.emit("playerClicked", { playerId: socketId, reactionTime });
+	currentRound++;
+
+	if (currentRound < maxRounds) {
+		startNewRound(io);
+	} else {
+		endGame(io);
+	}
+}
+
+function startNewRound(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+	let delay = Math.floor(Math.random() * 9000) + 1000; // 1 till 10 sekunder
+	setTimeout(() => {
+		virusStartTime = Date.now();
+		virusActive = true;
+		let position = Math.floor(Math.random() * 25);
+		io.emit("virusPosition", position);
+	}, delay);
+}
+
+function endGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+	io.emit("gameOver");
+	// Återställa spelets tillståndsvariabler här ev.
+	currentRound = 0;
+}
