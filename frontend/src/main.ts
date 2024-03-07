@@ -53,7 +53,7 @@ const player2ReactiontimeEl = document.querySelector(
 
 // player1pEl.innerHTML = `00:000`;
 // player2pEl.innerHTML = `00:000`;
-let startTime: number;
+// let startTime: number;
 
 player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
@@ -61,7 +61,7 @@ player2TimerEl.innerText = `00:000`;
 // Variables for timer and reationtime
 let timerInterval: number | null;
 let reactionTime: number | null;
-let elapsedTime: number = 0;
+// let elapsedTime: number = 0;
 
 // Show waiting room
 const showWaitingRoom = () => {
