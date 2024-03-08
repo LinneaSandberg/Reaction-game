@@ -9,8 +9,8 @@ export interface ServerToClientEvents {
   virusDelay: (data: VirusDelay) => void;
   startTimer: (elapsedTime: number) => void;
   stopTimer: (event: stopTimerEvent) => void;
-  // updateTimer: (event: stopTimerEvent) => void;
-  playerLeft: (username: string) => void;
+  updateTimer: (elapsedTime: number) => void;
+  playerLeft: (event: PlayerLeftEvent) => void;
   countdown: (seconds: number) => void;
   startGame: () => void;
   playerClicked: (event: PlayerClickedEvent) => void;
@@ -67,4 +67,8 @@ export interface PlayerClickedEvent {
 
 export interface UserSocketMap {
   [username: string]: string;
+}
+
+export interface PlayerLeftEvent {
+  playerId: string;
 }

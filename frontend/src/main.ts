@@ -78,6 +78,10 @@ const showGameRoom = () => {
 
 // Show player that the other player left
 const showDisconnect = () => {
+  console.log("showDisconnect function called.");
+
+  displayBoxEl.classList.remove("hide");
+  gamePageEl.classList.add("hide");
   // create a DIV element
   const displayEl = document.createElement("div");
 
@@ -86,10 +90,11 @@ const showDisconnect = () => {
 
   // Set content of the DIV element
   displayEl.innerHTML = `
-	<h3>The other player was a n00b and left you hanging!</h3>
+	<h3 id="headerNoob">The other player was a n00b and left you hanging!</h3>
 	<figure>
-	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/therokuchannel-the-roku-channel-this-joka-david-gborie-2kcrRowOHeH9n1EBx6">via GIPHY</a></p>
+	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" id="giphyNoob" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/therokuchannel-the-roku-channel-this-joka-david-gborie-2kcrRowOHeH9n1EBx6"></a></p>
 	</figure>
+  <button id="submit-newGame" type="submit">Play again!</button>
 	`;
 
   // Append the DIV element to the page
@@ -167,32 +172,14 @@ socket.on("startTimer", (elapsedTime) => {
   updateTimer(elapsedTime);
 });
 
-socket.on("playerLeft", (username) => {
-  console.log("A user has left the game: ", username);
+socket.on("playerLeft", ({ playerId }) => {
+  console.log("A user has left the game: ", playerId);
 
   // Send a notice to the other player in the room
   showDisconnect();
 
-  // give that other player the option to play atother game
+  // give that other player the option to play another game
 });
-
-// socket.on("startTimer", () => {
-//   // console.log("Timer started!");
-//   reactionTime = null;
-//   // updateTimer();
-
-//   elapsedTime = 0;
-//   player1ReactionTime = null;
-//   player2ReactionTime = null;
-
-//   // Start a timer interval to update the UI
-//   timerInterval = setInterval(() => {
-//     elapsedTime += 100;
-//     updateTimer();
-//     // Update UI with elapsed time
-//     // Implement this function based on your UI structure
-//   }, 100);
-// });
 
 // socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
 //   console.log(`Player ${playerId} clicked on the virus!`);

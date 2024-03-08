@@ -197,6 +197,7 @@ export const handleConnection = (
 		handleVirusHit(socket.id, io);
 		stopTimer(socket.id);
 	});
+	
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
@@ -239,7 +240,8 @@ export const handleConnection = (
 
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
-			io.to(player.gameId).emit("playerLeft", player.username);
+			console.log("player.gameId", player.gameId);
+			io.emit("playerLeft", { playerId: player.id });
 		}
 	});
 
