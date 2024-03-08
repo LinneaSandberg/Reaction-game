@@ -12,7 +12,6 @@ model Player {
   username String  @unique
   gameId   String? @db.ObjectId
   game     Game?   @relation(fields: [gameId], references: [id])
-  // HighScore HighScore
 }
 
 model Game {
@@ -22,6 +21,12 @@ model Game {
   createdAt   DateTime  @default(now())
   completedAt DateTime?
   // HighScore   HighScore[]
+}
+
+model HighScore {
+  id  String    @id @default(auto()) @map("_id") @db.ObjectId
+  username String
+  highscore Int
 }
 
 // model HighScore {

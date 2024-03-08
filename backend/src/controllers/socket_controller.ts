@@ -8,9 +8,12 @@ import {
 	ServerToClientEvents,
 	WaitingPlayers,
 	UserSocketMap,
+	ReactionTimes,
+	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
+import { createHighscore } from "../services/HighscoreService";
 //import { virusPosition } from "./game_controller";
 
 // Create a new debug instance
@@ -23,6 +26,7 @@ const waitingPlayers: WaitingPlayers[] = [];
 let player1ClickTime: number | null;
 let player2ClickTime: number | null;
 
+const reactionTimes: ReactionTimes = {};
 // Initialize variables for timer state
 let isGameRunning = false;
 let startTime: number;
@@ -114,26 +118,73 @@ export const handleConnection = (
 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
 
-		const playerClicked = socketId;
-		console.log("playerClicked", playerClicked);
+		const playerId: string = socketId; // Använd spelar-ID som en konstant
+		console.log("playerId", playerId);
 
 		if (isGameRunning) {
 			isGameRunning = false;
-			// console.log("startTime i stopTimer function", startTime);
-
-			// Clear the interval and calculate elapsed time
 			clearInterval(intervalId);
 			const elapsedTime = Date.now() - startTime;
 			console.log("elapsedTime stopTimer function", elapsedTime);
 
-			// Emit a signal to all clients to stop their timers
+			if (!reactionTimes[playerId]) {
+				reactionTimes[playerId] = [];
+			}
+			(reactionTimes[playerId] as number[]).push(elapsedTime);
+			console.log("reactionTimes", reactionTimes);
+
 			io.emit("stopTimer", {
 				playerId: socketId,
 				elapsedTime,
 			});
-			// }
+
+			if (reactionTimes[playerId].length >= 4) {
+				highscoreCalc(playerId, reactionTimes);
+			} else {
+				console.log(
+					"Inte tillräckligt med reactionstider för att beräkna highscore."
+				);
+			}
 		}
 	}
+
+	const highscoreCalc = (playerId: string, reactionTimes: ReactionTimes) => {
+		const averageHighscores: AverageHighscores = {};
+
+		for (const currentPlayerId in reactionTimes) {
+			const playerTimes = reactionTimes[currentPlayerId];
+
+			const averageTime =
+				playerTimes.reduce((sum, time) => sum + time, 0) /
+				playerTimes.length;
+
+			averageHighscores[currentPlayerId] = averageTime;
+		}
+
+		console.log("averageHighscores", averageHighscores);
+
+		saveHighscoresToDatabase(playerId, averageHighscores);
+	};
+
+	// Funktion för att spara highscores i databasen
+	const saveHighscoresToDatabase = async (
+		playerId: string,
+		highscore: AverageHighscores
+	) => {
+		// console.log(`Saving highscore for player ${playerId}:`, highscore);
+		console.log("highscore: ", highscore);
+
+		const player = await getPlayer(playerId);
+
+		const username = player?.username;
+		const playerHighscore = highscore[playerId];
+		console.log("username ", username);
+		console.log("playerHighscore ", playerHighscore);
+
+		if (username) {
+			await createHighscore(username, playerHighscore);
+		}
+	};
 
 	socket.on("startTimer", () => {
 		if (!isGameRunning) {
@@ -197,7 +248,7 @@ export const handleConnection = (
 		handleVirusHit(socket.id, io);
 		stopTimer(socket.id);
 	});
-	
+
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);

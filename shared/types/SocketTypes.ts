@@ -72,3 +72,11 @@ export interface UserSocketMap {
 export interface PlayerLeftEvent {
   playerId: string;
 }
+
+export interface ReactionTimes {
+  [playerId: string]: number[];
+}
+
+export interface AverageHighscores {
+  [playerId: string]: number;
+}
