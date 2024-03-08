@@ -214,6 +214,7 @@ export const handleConnection = (
 		handleVirusHit(socket.id, io);
 		stopTimer(socket.id);
 	});
+	
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
@@ -253,11 +254,6 @@ export const handleConnection = (
 
 		// Remove player after he plays
 		await deletePlayer(socket.id);
-
-		// const gameRoom = player.gameId; 
-		// console.log("Game with id: ", gameRoom);
-		console.log("player.gameId", player.gameId);
-
 
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
