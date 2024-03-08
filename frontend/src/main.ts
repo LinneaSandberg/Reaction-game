@@ -317,7 +317,7 @@ gridItems.forEach((gridItem) => {
       gridItem.classList.remove("virus");
       // socket.emit("stopTimer", "username");
       if (username) {
-        socket.emit("hitVirus", username);
+        socket.emit("virusClick", username);
         console.log("Username som klickade", username);
       }
       /* result++;

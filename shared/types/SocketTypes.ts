@@ -26,7 +26,7 @@ export interface ClientToServerEvents {
     username: string,
     callback: (response: PlayerJoinResponse) => void
   ) => void;
-  hitVirus: (username: string) => void;
+  virusClick: (username: string) => void;
   startTimer: () => void; // New event for starting the game
   stopTimer: (username: string) => void; // New event for stopping the game
   updateTimer: (elapsedTime: number, playerId: string) => void;
