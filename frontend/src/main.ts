@@ -77,7 +77,6 @@ const showWaitingRoom = () => {
 const showGameRoom = () => {
   gamePageEl.classList.remove("hide");
   lobbyPageEl.classList.add("hide");
-  console.log("Nu börjar spelet");
 };
 
 // Show player that the other player left
@@ -219,9 +218,6 @@ if (startNewGameFormEl) {
     e.preventDefault();
 
     showWaitingRoom();
-  
-  
-  
   });
 }
 

@@ -11,7 +11,6 @@ import {
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
-//import { virusPosition } from "./game_controller";
 
 // Create a new debug instance
 const debug = Debug("backend:socket_controller");
@@ -104,30 +103,12 @@ export const handleConnection = (
 				});
 				newRound(io);
 			});
-			// startTimer();
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
 	});
-
-	// function startTimer() {
-	// 	if (!isGameRunning) {
-	// 		isGameRunning = true;
-
-	// 		startTime = Date.now();
-
-	// 		// Emit a signal to all clients to start their timers
-	// 		io.emit("startTimer");
-
-	// 		// Update timer every millisecond
-	// 		intervalId = setInterval(() => {
-	// 			const elapsedTime = Date.now() - startTime;
-	// 			// io.emit("updateTimer", elapsedTime);
-	// 		}, 100);
-	// 	}
-	// }
 
 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
@@ -141,13 +122,13 @@ export const handleConnection = (
 			// Clear the interval and calculate elapsed time
 			clearInterval(intervalId);
 			const elapsedTime = Date.now() - startTime;
+			console.log("elapsedTime stopTimer function", elapsedTime);
 
 			// Emit a signal to all clients to stop their timers
 			io.emit("stopTimer", {
-				playerId: socket.id,
+				playerId: socketId,
 				elapsedTime,
 			});
-			// }
 		}
 	}
 
@@ -157,9 +138,6 @@ export const handleConnection = (
 
 			startTime = Date.now();
 
-			// Emit a signal to all clients to start their timers
-			// io.emit("startTimer");
-
 			// Update timer every millisecond
 			intervalId = setInterval(() => {
 				const elapsedTime = Date.now() - startTime;
@@ -168,7 +146,7 @@ export const handleConnection = (
 		}
 	});
 
-	socket.on("updateTimer", () => {});
+	// socket.on("updateTimer", () => {});
 
 	function startGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
 		const newVirusPosition = virusPosition();
@@ -257,6 +235,7 @@ export const handleConnection = (
 
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
+			console.log("player.gameId", player.gameId);
 			io.emit("playerLeft", {playerId: player.id });
 		}
 	});
