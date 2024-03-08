@@ -162,18 +162,21 @@ export const handleConnection = (
 
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
-
-		if (timeoutTimer) clearTimeout(timeoutTimer);
-		timeoutTimer = setTimeout(() => {
-			console.log("Uteblivet klick inom 30 sek.🐌");
-			newRound(io);
-			currentRound++;
-			console.log(currentRound);
-		}, 30000);
+		thirtySecTimer(io);
 	}
 
 	function virusPosition(): number {
 		return Math.floor(Math.random() * 25);
+	}
+
+	function thirtySecTimer(io: Server, remainingTime: number = 30000){
+		if (timeoutTimer) clearTimeout(timeoutTimer);
+		timeoutTimer = setTimeout(() => {
+			console.log("No click within 30 sec.🐌");
+			newRound(io);
+			currentRound++;
+			console.log(currentRound);
+		}, remainingTime);
 	}
 
 	function newRound(io: Server) {
