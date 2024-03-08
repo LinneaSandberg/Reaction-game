@@ -11,7 +11,6 @@ import {
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
-//import { virusPosition } from "./game_controller";
 
 // Create a new debug instance
 const debug = Debug("backend:socket_controller");
@@ -193,11 +192,11 @@ export const handleConnection = (
 	}
 
 	// Handling a virus hit from a client
-	socket.on("hitVirus", () => {
+	socket.on("virusClick", () => {
 		handleVirusHit(socket.id, io);
 		stopTimer(socket.id);
 	});
-	
+
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
