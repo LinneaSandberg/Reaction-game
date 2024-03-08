@@ -1,11 +1,13 @@
 import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
+  Highscores,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
 } from "@shared/types/SocketTypes";
 import "./assets/scss/style.scss";
+import { Highscore } from "@shared/types/Models";
 
 const SOCKET_HOST = import.meta.env.VITE_SOCKET_HOST;
 
@@ -44,16 +46,10 @@ const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector(
   "#player2Timer"
 ) as HTMLParagraphElement;
-// const player1ReactiontimeEl = document.querySelector(
-//   "#player1Reactiontime"
-// ) as HTMLParagraphElement;
-// const player2ReactiontimeEl = document.querySelector(
-//   "#player2Reactiontime"
-// ) as HTMLParagraphElement;
 
-// player1pEl.innerHTML = `00:000`;
-// player2pEl.innerHTML = `00:000`;
-// let startTime: number;
+const highscoreChartEl = document.querySelector(
+  ".highscoreChart"
+) as HTMLUListElement;
 
 player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
@@ -149,6 +145,14 @@ socket.on("disconnect", () => {
 socket.io.on("reconnect", () => {
   console.log("🍽️ Reconnected to the server:", SOCKET_HOST);
   console.log("🔗 Socket ID:", socket.id);
+});
+
+socket.emit("highscore", (allHighscores) => {
+  const higscoreListEl = document.createElement("li");
+
+  higscoreListEl.innerHTML = `<li>${allHighscores.username} : ${allHighscores.highscore}</li>`;
+
+  highscoreChartEl.appendChild(higscoreListEl);
 });
 
 // listen for stopTimer

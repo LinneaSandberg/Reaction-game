@@ -3,6 +3,10 @@
  */
 import prisma from "../prisma";
 
+export const getAllHighscores = () => {
+	return prisma.highScore.findMany();
+};
+
 export const createHighscore = (username: string, highscore: number) => {
 	return prisma.highScore.create({
 		data: {

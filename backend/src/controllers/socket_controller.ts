@@ -13,7 +13,10 @@ import {
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, getPlayer } from "../services/PlayerService";
-import { createHighscore } from "../services/HighscoreService";
+import {
+	createHighscore,
+	getAllHighscores,
+} from "../services/HighscoreService";
 //import { virusPosition } from "./game_controller";
 
 // Create a new debug instance
@@ -185,6 +188,14 @@ export const handleConnection = (
 			await createHighscore(username, playerHighscore);
 		}
 	};
+
+	socket.on("highscore", async (callback) => {
+		const allHighscores = await getAllHighscores();
+		console.log("allHighscores", allHighscores);
+		// if (allHighscores){
+		// io.emit("highscore", allHighscores);
+		// callback(allHighscores);
+	});
 
 	socket.on("startTimer", () => {
 		if (!isGameRunning) {
