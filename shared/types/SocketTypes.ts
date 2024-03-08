@@ -7,15 +7,15 @@ export interface ServerToClientEvents {
   waitingForPlayer: (event: WaitingForPlayersEvent) => void;
   virusPosition: (position: number) => void;
   virusDelay: (data: VirusDelay) => void;
-  startTimer: () => void;
+  startTimer: (elapsedTime: number) => void;
   stopTimer: (event: stopTimerEvent) => void;
-  updateTimer: (elapsedTime: number) => void;
+  // updateTimer: (event: stopTimerEvent) => void;
   playerLeft: (username: string) => void;
   countdown: (seconds: number) => void;
   startGame: () => void;
   playerClicked: (event: PlayerClickedEvent) => void;
-  virusHitConfirmed: () => void
-  gameOver: () => void
+  virusHitConfirmed: () => void;
+  gameOver: () => void;
 }
 
 // Events emitted by the client to the server
@@ -66,5 +66,5 @@ export interface PlayerClickedEvent {
 }
 
 export interface UserSocketMap {
-    [username: string]: string;
+  [username: string]: string;
 }

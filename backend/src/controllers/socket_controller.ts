@@ -90,7 +90,6 @@ export const handleConnection = (
 						clearInterval(countdownInterval);
 						setTimeout(() => {
 							io.emit("startGame");
-							// io.emit("startTimer");
 						}, 100);
 					}
 				}, 1000);
@@ -105,30 +104,12 @@ export const handleConnection = (
 				});
 				newRound(io);
 			});
-			// startTimer();
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
 	});
-
-	// function startTimer() {
-	// 	if (!isGameRunning) {
-	// 		isGameRunning = true;
-
-	// 		startTime = Date.now();
-
-	// 		// Emit a signal to all clients to start their timers
-	// 		io.emit("startTimer");
-
-	// 		// Update timer every millisecond
-	// 		intervalId = setInterval(() => {
-	// 			const elapsedTime = Date.now() - startTime;
-	// 			// io.emit("updateTimer", elapsedTime);
-	// 		}, 100);
-	// 	}
-	// }
 
 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
@@ -138,15 +119,16 @@ export const handleConnection = (
 
 		if (isGameRunning) {
 			isGameRunning = false;
-			console.log("startTime i stopTimer function", startTime);
+			// console.log("startTime i stopTimer function", startTime);
 
 			// Clear the interval and calculate elapsed time
 			clearInterval(intervalId);
 			const elapsedTime = Date.now() - startTime;
+			console.log("elapsedTime stopTimer function", elapsedTime);
 
 			// Emit a signal to all clients to stop their timers
 			io.emit("stopTimer", {
-				playerId: socket.id,
+				playerId: socketId,
 				elapsedTime,
 			});
 			// }
@@ -160,35 +142,35 @@ export const handleConnection = (
 			startTime = Date.now();
 
 			// Emit a signal to all clients to start their timers
-			io.emit("startTimer");
+			// io.emit("startTimer");
 
 			// Update timer every millisecond
 			intervalId = setInterval(() => {
 				const elapsedTime = Date.now() - startTime;
-				io.emit("updateTimer", elapsedTime);
+				io.emit("startTimer", elapsedTime);
 			}, 100);
 		}
 	});
 
-	socket.on("updateTimer", () => {});
+	// socket.on("updateTimer", () => {});
 
 	function startGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
 		const newVirusPosition = virusPosition();
 		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
 		io.emit("virusPosition", newVirusPosition); // Inform players about the new position
 
-		io.emit("startTimer");
+		// io.emit("startTimer");
 
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 
 		if (timeoutTimer) clearTimeout(timeoutTimer);
-        timeoutTimer = setTimeout(() => {
-            console.log("Uteblivet klick inom 30 sek.🐌");
-            newRound(io);
+		timeoutTimer = setTimeout(() => {
+			console.log("Uteblivet klick inom 30 sek.🐌");
+			newRound(io);
 			currentRound++;
-			console.log(currentRound)
-        }, 30000);
+			console.log(currentRound);
+		}, 30000);
 	}
 
 	function virusPosition(): number {
@@ -199,7 +181,7 @@ export const handleConnection = (
 		if (currentRound < maxRounds) {
 			currentRound++;
 			startGame(io);
-			console.log(currentRound)
+			console.log(currentRound);
 		} else {
 			endGame(io);
 		}
@@ -213,7 +195,7 @@ export const handleConnection = (
 	// Handling a virus hit from a client
 	socket.on("hitVirus", () => {
 		handleVirusHit(socket.id, io);
-		// stopTimer(socket.id);
+		stopTimer(socket.id);
 	});
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
@@ -271,11 +253,11 @@ export const handleConnection = (
 		const clickTime = Date.now();
 		const reactionTime = clickTime - virusStartTime;
 
-		stopTimer(socket.id);
+		// stopTimer(socketId);
 
 		// io.emit("playerClicked", { playerId: socketId, reactionTime });
 		currentRound++;
-		console.log(currentRound)
+		console.log(currentRound);
 		if (currentRound < maxRounds) {
 			startNewRound(io);
 		} else {

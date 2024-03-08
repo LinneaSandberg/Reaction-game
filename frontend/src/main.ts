@@ -111,7 +111,7 @@ const updateTimer = (elapsedTime: number) => {
   const milliseconds = elapsedTime % 1000;
   // console.log("elapsedTime", elapsedTime);
 
-  const formattedTime = `${String(seconds).padStart(2, "0")}.${String(
+  const formattedTime = `${String(seconds).padStart(2, "0")}:${String(
     milliseconds
   ).padStart(3, "0")}`;
 
@@ -148,23 +148,21 @@ socket.io.on("reconnect", () => {
 
 // listen for stopTimer
 socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  // console.log("elapsedTime", elapsedTime);
   const seconds = Math.floor(elapsedTime / 1000)
     .toString()
     .padStart(2, "0");
   const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
 
   // if (player1pEl && playerId === socket.id) {
-  if (player1pEl && playerId === socket.id) {
+  if (playerId === socket.id) {
     player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  } else if (player2pEl && playerId !== socket.id) {
+  } else if (playerId !== socket.id) {
     player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
   }
-  // }
 });
 
 // Listen for updateTimer
-socket.on("updateTimer", (elapsedTime) => {
+socket.on("startTimer", (elapsedTime) => {
   // Update UI with elapsed time
   updateTimer(elapsedTime);
 });
