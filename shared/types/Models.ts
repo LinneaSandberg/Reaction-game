@@ -18,3 +18,8 @@ export interface VirusPosition {
 export interface VirusDelay {
     delay: number;
 }
+
+export type StartGame = {
+    virusPosition: number;
+    virusDelay: number;
+  };

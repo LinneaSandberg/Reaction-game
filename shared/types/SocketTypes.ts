@@ -1,18 +1,18 @@
-import { Player, Room, VirusDelay } from "./Models";
+import { Player, Room, StartGame, VirusDelay } from "./Models";
 export {};
 
 // Events emitted by the server to the client
 export interface ServerToClientEvents {
   roomCreated: (event: RoomCreatedEvent) => void;
   waitingForPlayer: (event: WaitingForPlayersEvent) => void;
-  virusPosition: (position: number) => void;
+  virusPosition: (position: number, delay: number) => void;
   virusDelay: (data: VirusDelay) => void;
   startTimer: (elapsedTime: number) => void;
   stopTimer: (event: stopTimerEvent) => void;
   updateTimer: (elapsedTime: number) => void;
   playerLeft: (event: PlayerLeftEvent) => void;
   countdown: (seconds: number) => void;
-  startGame: () => void;
+  startGame: (position: number, delay: number) => void;
   playerClicked: (event: PlayerClickedEvent) => void;
   virusHitConfirmed: () => void;
   gameOver: () => void;

@@ -88,19 +88,19 @@ export const handleConnection = (
 						// Wait one interval after reaching 0 before clearing
 						clearInterval(countdownInterval);
 						setTimeout(() => {
-							io.emit("startGame");
+							io.emit("startGame",virusPosition(),virusDelay());
 						}, 100);
 					}
 				}, 1000);
 			}
 
 			const roomId = room.id;
-			initiateCountdown(io);
 			playersInRoom.forEach((player) => {
 				io.to(player.socketId).emit("roomCreated", {
 					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
+				initiateCountdown(io);
 				newRound(io);
 			});
 		} else {
@@ -153,10 +153,12 @@ export const handleConnection = (
 
 	// socket.on("updateTimer", () => {});
 
-	function startGame(io: Server<ClientToServerEvents, ServerToClientEvents>) {
+
+	function startGame(io: Server) {
+		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
 		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
-		io.emit("virusPosition", newVirusPosition); // Inform players about the new position
+		io.emit("virusPosition", newVirusPosition, newVirusDelay); // Inform players about the new position
 
 		// io.emit("startTimer");
 
@@ -169,12 +171,17 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 25);
 	}
 
+	//Random virus delay 1-10 seconds
+	function virusDelay(): number {
+		return Math.floor(Math.random() * 9000) + 1000;
+	}
+
+
 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
 		if (timeoutTimer) clearTimeout(timeoutTimer);
 		timeoutTimer = setTimeout(() => {
 			console.log("No click within 30 sec.🐌");
 			newRound(io);
-			currentRound++;
 			console.log(currentRound);
 		}, remainingTime);
 	}
@@ -183,7 +190,6 @@ export const handleConnection = (
 		if (currentRound < maxRounds) {
 			currentRound++;
 			startGame(io);
-			console.log(currentRound);
 		} else {
 			endGame(io);
 		}
@@ -196,7 +202,7 @@ export const handleConnection = (
 
 	// Handling a virus hit from a client
 	socket.on("virusClick", () => {
-		handleVirusHit(socket.id, io);
+		handleVirusClick(socket.id, io);
 		stopTimer(socket.id);
 	});
 
@@ -247,18 +253,15 @@ export const handleConnection = (
 		}
 	});
 
-	function handleVirusHit(
+	function handleVirusClick(
 		socketId: string,
-		io: Server<ClientToServerEvents, ServerToClientEvents>
-	) {
+		io: Server) {
 		if (!virusActive) return;
 		clearTimeout(timeoutTimer);
 		virusActive = false; // Förhindra fler träffar tills nästa runda startar
 		const clickTime = Date.now();
 		const reactionTime = clickTime - virusStartTime;
-
 		// stopTimer(socketId);
-
 		// io.emit("playerClicked", { playerId: socketId, reactionTime });
 		currentRound++;
 		console.log(currentRound);
@@ -277,7 +280,7 @@ export const handleConnection = (
 			virusStartTime = Date.now();
 			virusActive = true;
 			let position = Math.floor(Math.random() * 25);
-			io.emit("virusPosition", position);
+			io.emit("virusPosition", position, delay);
 		}, delay);
 	}
 };
