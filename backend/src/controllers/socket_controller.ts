@@ -118,7 +118,6 @@ export const handleConnection = (
 
 		if (isGameRunning) {
 			isGameRunning = false;
-			// console.log("startTime i stopTimer function", startTime);
 
 			// Clear the interval and calculate elapsed time
 			clearInterval(intervalId);
@@ -130,7 +129,6 @@ export const handleConnection = (
 				playerId: socketId,
 				elapsedTime,
 			});
-			// }
 		}
 	}
 
@@ -140,13 +138,10 @@ export const handleConnection = (
 
 			startTime = Date.now();
 
-			// Emit a signal to all clients to start their timers
-			// io.emit("startTimer");
-
 			// Update timer every millisecond
 			intervalId = setInterval(() => {
 				const elapsedTime = Date.now() - startTime;
-				io.emit("startTimer", elapsedTime);
+				io.emit("updateTimer", elapsedTime);
 			}, 100);
 		}
 	});
@@ -205,7 +200,6 @@ export const handleConnection = (
 		handleVirusClick(socket.id, io);
 		stopTimer(socket.id);
 	});
-
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
@@ -246,10 +240,12 @@ export const handleConnection = (
 		// Remove player after he plays
 		await deletePlayer(socket.id);
 
+		const playerLeftout = player.id;
+
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
 			console.log("player.gameId", player.gameId);
-			io.emit("playerLeft", { playerId: player.id });
+			io.emit("playerLeft", {playerId: player.id });
 		}
 	});
 
@@ -261,10 +257,10 @@ export const handleConnection = (
 		virusActive = false; // Förhindra fler träffar tills nästa runda startar
 		const clickTime = Date.now();
 		const reactionTime = clickTime - virusStartTime;
-		// stopTimer(socketId);
+
 		// io.emit("playerClicked", { playerId: socketId, reactionTime });
 		currentRound++;
-		console.log(currentRound);
+		console.log(currentRound)
 		if (currentRound < maxRounds) {
 			startNewRound(io);
 		} else {

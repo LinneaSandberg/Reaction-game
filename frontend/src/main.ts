@@ -44,6 +44,10 @@ const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector(
   "#player2Timer"
 ) as HTMLParagraphElement;
+
+// button for reset
+const startNewGameFormEl = document.querySelector("#startNewGameForm") as HTMLFormElement;
+
 // const player1ReactiontimeEl = document.querySelector(
 //   "#player1Reactiontime"
 // ) as HTMLParagraphElement;
@@ -73,15 +77,15 @@ const showWaitingRoom = () => {
 const showGameRoom = () => {
   gamePageEl.classList.remove("hide");
   lobbyPageEl.classList.add("hide");
-  console.log("Nu börjar spelet");
 };
 
 // Show player that the other player left
 const showDisconnect = () => {
   console.log("showDisconnect function called.");
 
-  displayBoxEl.classList.remove("hide");
+  // startPageEl.classList.add("hide");
   gamePageEl.classList.add("hide");
+  displayBoxEl.classList.remove("hide");
   // create a DIV element
   const displayEl = document.createElement("div");
 
@@ -94,7 +98,9 @@ const showDisconnect = () => {
 	<figure>
 	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" id="giphyNoob" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/therokuchannel-the-roku-channel-this-joka-david-gborie-2kcrRowOHeH9n1EBx6"></a></p>
 	</figure>
-  <button id="submit-newGame" type="submit">Play again!</button>
+  <form id="startNewGameForm">
+  <button type="submit">Play again!</button>
+  </form>
 	`;
 
   // Append the DIV element to the page
@@ -206,6 +212,14 @@ socket.on("playerLeft", ({ playerId }) => {
 //     // Implement this function based on your UI structure
 //   }
 // });
+
+if (startNewGameFormEl) {
+  startNewGameFormEl.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    showWaitingRoom();
+  });
+}
 
 // Create varible for username
 let username: string | null = null;
