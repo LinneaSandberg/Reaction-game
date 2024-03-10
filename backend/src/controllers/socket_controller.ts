@@ -102,7 +102,7 @@ export const handleConnection = (
 					players: playersInRoom.map((p) => p.players),
 				});
 				initiateCountdown(io);
-				newRound(io);
+				startGame(io);
 			});
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
@@ -177,18 +177,8 @@ export const handleConnection = (
 		if (timeoutTimer) clearTimeout(timeoutTimer);
 		timeoutTimer = setTimeout(() => {
 			console.log("No click within 30 sec.🐌");
-			newRound(io);
 			console.log(currentRound);
 		}, remainingTime);
-	}
-
-	function newRound(io: Server) {
-		if (currentRound < maxRounds) {
-			currentRound++;
-			startGame(io);
-		} else {
-			endGame(io);
-		}
 	}
 
 	function virusSetup(io: Server) {
