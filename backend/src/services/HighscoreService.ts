@@ -4,7 +4,11 @@
 import prisma from "../prisma";
 
 export const getAllHighscores = () => {
-	return prisma.highScore.findMany();
+	return prisma.highScore.findMany({
+		orderBy: {
+			highscore: "desc",
+		},
+	});
 };
 
 export const createHighscore = (username: string, highscore: number) => {

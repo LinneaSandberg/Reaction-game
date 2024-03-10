@@ -147,12 +147,12 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-socket.emit("highscore", (allHighscores) => {
-  const higscoreListEl = document.createElement("li");
-
-  higscoreListEl.innerHTML = `<li>${allHighscores.username} : ${allHighscores.highscore}</li>`;
-
-  highscoreChartEl.appendChild(higscoreListEl);
+socket.emit("highscore", (highscores) => {
+  highscoreChartEl.innerHTML = highscores
+    .map(
+      (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
+    )
+    .join("");
 });
 
 // listen for stopTimer

@@ -194,7 +194,7 @@ export const handleConnection = (
 		console.log("allHighscores", allHighscores);
 		// if (allHighscores){
 		// io.emit("highscore", allHighscores);
-		// callback(allHighscores);
+		callback(allHighscores);
 	});
 
 	socket.on("startTimer", () => {
