@@ -35,6 +35,7 @@ let userSocketMap: UserSocketMap = {};
 //Game variables
 let currentRound = 0;
 const maxRounds = 10;
+let clicksInRound = 0;
 let virusActive = false;
 let virusStartTime: number;
 
@@ -153,7 +154,7 @@ export const handleConnection = (
 		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
 		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
-		io.emit("virusPosition", newVirusPosition, newVirusDelay); // Inform players about the new position
+		io.emit("virusPosition", newVirusPosition, newVirusDelay)
 
 		// io.emit("startTimer");
 
@@ -190,15 +191,36 @@ export const handleConnection = (
 		}
 	}
 
+	function virusSetup(io: Server) {
+		setTimeout(() => {
+			virusStartTime = Date.now();
+			virusActive = true;
+			virusPosition();
+			io.emit("virusPosition", virusPosition(), virusDelay());
+		}, virusDelay());
+	}
+
 	function endGame(io: Server) {
 		io.emit("gameOver");
+		console.log("Game over");
 		currentRound = 0;
 	}
 
 	// Handling a virus hit from a client
-	socket.on("virusClick", () => {
-		handleVirusClick(socket.id, io);
-		stopTimer(socket.id);
+	socket.on("virusClick", (username) => {
+		clicksInRound++;
+		if (clicksInRound === 2) { // Assuming a 2-player game
+			clicksInRound = 0;
+			currentRound++;
+			if (currentRound >= maxRounds) {
+				console.log("Triggering Game Over");
+				io.emit("gameOver");
+			} else {
+				// Proceed to the next round
+			console.log("New round");
+			virusSetup(io);
+			}
+		}
 	});
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
@@ -248,35 +270,4 @@ export const handleConnection = (
 			io.emit("playerLeft", {playerId: player.id });
 		}
 	});
-
-	function handleVirusClick(
-		socketId: string,
-		io: Server) {
-		if (!virusActive) return;
-		clearTimeout(timeoutTimer);
-		virusActive = false; // Förhindra fler träffar tills nästa runda startar
-		const clickTime = Date.now();
-		const reactionTime = clickTime - virusStartTime;
-
-		// io.emit("playerClicked", { playerId: socketId, reactionTime });
-		currentRound++;
-		console.log(currentRound)
-		if (currentRound < maxRounds) {
-			startNewRound(io);
-		} else {
-			endGame(io);
-		}
-	}
-
-	function startNewRound(
-		io: Server<ClientToServerEvents, ServerToClientEvents>
-	) {
-		let delay = Math.floor(Math.random() * 9000) + 1000; // 1 till 10 sekunder
-		setTimeout(() => {
-			virusStartTime = Date.now();
-			virusActive = true;
-			let position = Math.floor(Math.random() * 25);
-			io.emit("virusPosition", position, delay);
-		}, delay);
-	}
 };

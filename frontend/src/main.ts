@@ -34,6 +34,7 @@ const usernameInputEl = document.querySelector(
 ) as HTMLInputElement;
 
 const gameFieldEl = document.querySelector(".game-field") as HTMLDivElement;
+const gameOverPageEl = document.querySelector("#game-over-page") as HTMLDivElement;
 
 // Result display
 const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
@@ -292,7 +293,7 @@ socket.on("countdown", (seconds) => {
 socket.on("startGame", () => {
   countdownPageEl.style.display = "none";
   gameFieldEl.style.display = "flex";
-
+  
   // Initialize or reset your game here
   console.log("StartTimer i startGame");
   socket.emit("startTimer");
@@ -332,7 +333,7 @@ gridItems.forEach((gridItem) => {
       // socket.emit("stopTimer", "username");
       if (username) {
         socket.emit("virusClick", username);
-        console.log("Username som klickade", username);
+        console.log("User som klickade", username, "socketId:", socket.id);
       }
       /* result++;
 			score.textContent += `${result}`; */
@@ -340,7 +341,14 @@ gridItems.forEach((gridItem) => {
   });
 });
 
+
 socket.on("gameOver", () => {
   console.log("Spelet är över!");
+  gameFieldEl.style.display = "none";
+  gameOverPageEl.classList.remove("hide");
+  document.querySelector("#play-again")?.addEventListener("click", () => {
+    gameOverPageEl.classList.add("hide");
+    startPageEl.classList.remove("hide");
+  });
   // Visa resultat, erbjuda att starta nytt spel...
 });
