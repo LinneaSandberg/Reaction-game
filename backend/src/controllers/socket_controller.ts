@@ -121,14 +121,13 @@ export const handleConnection = (
 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
 
-		const playerId: string = socketId; // Använd spelar-ID som en konstant
+		const playerId: string = socketId;
 		console.log("playerId", playerId);
 
 		if (isGameRunning) {
 			isGameRunning = false;
 			clearInterval(intervalId);
 			const elapsedTime = Date.now() - startTime;
-			console.log("elapsedTime stopTimer function", elapsedTime);
 
 			if (!reactionTimes[playerId]) {
 				reactionTimes[playerId] = [];
@@ -142,10 +141,11 @@ export const handleConnection = (
 			});
 
 			if (reactionTimes[playerId].length >= 4) {
+				// Här ska vi ändra från 4 till maxRounds
 				highscoreCalc(playerId, reactionTimes);
 			} else {
 				console.log(
-					"Inte tillräckligt med reactionstider för att beräkna highscore."
+					"Inte tillräckligt med reaktionstider för att beräkna highscore."
 				);
 			}
 		}
@@ -191,9 +191,6 @@ export const handleConnection = (
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();
-		console.log("allHighscores", allHighscores);
-		// if (allHighscores){
-		// io.emit("highscore", allHighscores);
 		callback(allHighscores);
 	});
 

@@ -16,7 +16,6 @@ export interface ServerToClientEvents {
   playerClicked: (event: PlayerClickedEvent) => void;
   virusHitConfirmed: () => void;
   gameOver: () => void;
-  // highscore: (highscores: Highscores) => void;
 }
 
 // Events emitted by the client to the server

@@ -149,6 +149,7 @@ socket.io.on("reconnect", () => {
 
 socket.emit("highscore", (highscores) => {
   highscoreChartEl.innerHTML = highscores
+    .slice(0, 5)
     .map(
       (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
     )
