@@ -187,12 +187,6 @@ export const handleConnection = (
 		}, virusDelay());
 	}
 
-	function endGame(io: Server) {
-		io.emit("gameOver");
-		console.log("Game over");
-		currentRound = 0;
-	}
-
 	// Handling a virus hit from a client
 	socket.on("virusClick", (username) => {
 		clicksInRound++;
