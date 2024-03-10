@@ -118,6 +118,7 @@ const usernamesDisplay = (username: string, opponent: string) => {
 
 // Update timer to start counting from 0
 const updateTimer = (elapsedTime: number) => {
+  console.log("updatetimer i frontend: ", updateTimer);
   const seconds = Math.floor((elapsedTime % 60000) / 1000);
   const milliseconds = elapsedTime % 1000;
   // console.log("elapsedTime", elapsedTime);
@@ -159,6 +160,7 @@ socket.io.on("reconnect", () => {
 
 // listen for stopTimer
 socket.on("stopTimer", ({ playerId, elapsedTime }) => {
+  console.log("Stoptimer: NU BORD TIMERN STOPPAS!: ", playerId, elapsedTime);
   const seconds = Math.floor(elapsedTime / 1000)
     .toString()
     .padStart(2, "0");

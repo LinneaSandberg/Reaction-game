@@ -124,6 +124,10 @@ export const handleConnection = (
 			const elapsedTime = Date.now() - startTime;
 			console.log("elapsedTime stopTimer function", elapsedTime);
 
+			console.log("stopTimer, socketId: ", socketId);
+			console.log("stopTimer, elapsedTime: ", elapsedTime);
+
+
 			// Emit a signal to all clients to stop their timers
 			io.emit("stopTimer", {
 				playerId: socketId,
