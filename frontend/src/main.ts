@@ -166,12 +166,13 @@ const showDisconnect = () => {
 
   // Set content of the DIV element
   displayEl.innerHTML = `
-	<h3 id="headerNoob">The other player was a n00b and left you hanging!</h3>
+	<h3 id="headerNoob">The other player was a noob!</h3>
+  <p id="paraNoob">And left you hanging!</p>
 	<figure>
-	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" id="giphyNoob" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/therokuchannel-the-roku-channel-this-joka-david-gborie-2kcrRowOHeH9n1EBx6"></a></p>
+	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" id="giphyNoob" allowFullScreen></iframe>
 	</figure>
   <form id="startNewGameForm">
-  <button type="submit">Play again!</button>
+  <button id="startGame-submit" type="submit">Play again!</button>
   </form>
 	`;
 
@@ -245,13 +246,11 @@ socket.on("startTimer", (elapsedTime) => {
   updateTimer(elapsedTime);
 });
 
-socket.on("playerLeft", ({ playerId }) => {
-  console.log("A user has left the game: ", playerId);
+socket.on("playerLeft", (username) => {
+  console.log("A user has left the game: ", username);
 
-  // Send a notice to the other player in the room
+  // Send that information to the other player in the room
   showDisconnect();
-
-  // give that other player the option to play another game
 });
 
 // socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
