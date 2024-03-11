@@ -5,7 +5,7 @@ export {};
 export interface ServerToClientEvents {
   roomCreated: (event: RoomCreatedEvent) => void;
   waitingForPlayer: (event: WaitingForPlayersEvent) => void;
-  virusPosition: (position: number, delay: number) => void;
+  virusLogic: (position: number, delay: number) => void;
   virusDelay: (data: VirusDelay) => void;
   startTimer: (elapsedTime: number) => void;
   stopTimer: (event: stopTimerEvent) => void;

@@ -299,7 +299,7 @@ socket.on("startGame", () => {
   socket.emit("startTimer");
 });
 
-socket.on("virusPosition", (position) => {
+socket.on("virusLogic", (position) => {
   // console.log(`New virus position: ${position}`);
 
   // Remove "virus" class from all grid items

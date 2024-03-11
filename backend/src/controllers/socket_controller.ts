@@ -154,7 +154,7 @@ export const handleConnection = (
 		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
 		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
-		io.emit("virusPosition", newVirusPosition, newVirusDelay)
+		io.emit("virusLogic", newVirusPosition, newVirusDelay)
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 		thirtySecTimer(io);
@@ -183,7 +183,7 @@ export const handleConnection = (
 			virusStartTime = Date.now();
 			virusActive = true;
 			virusPosition();
-			io.emit("virusPosition", virusPosition(), virusDelay());
+			io.emit("virusLogic", virusPosition(), virusDelay());
 		}, virusDelay());
 	}
 
