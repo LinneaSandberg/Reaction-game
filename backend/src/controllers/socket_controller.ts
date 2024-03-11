@@ -114,7 +114,7 @@ export const handleConnection = (
 		}
 	});
 
-/* 	function stopTimer(socketId: string) {
+	/* 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
 
 		const playerClicked = socketId;
@@ -136,7 +136,7 @@ export const handleConnection = (
 		}
 	} */
 
-/* 	socket.on("startTimer", () => {
+	/* 	socket.on("startTimer", () => {
 		if (!isGameRunning) {
 			isGameRunning = true;
 
@@ -152,12 +152,13 @@ export const handleConnection = (
 
 	// socket.on("updateTimer", () => {});
 
-
 	function startRound(io: Server) {
 		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
-		console.log(`🐉Skickar ny virusposition: ${newVirusPosition} från startGame i socket_controller`);
-		io.emit("virusLogic", newVirusPosition, newVirusDelay)
+		console.log(
+			`🐉Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
+		);
+		io.emit("virusLogic", newVirusPosition, newVirusDelay);
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 		// thirtySecTimer(io);
@@ -172,8 +173,7 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 9000) + 1000;
 	}
 
-
-/* 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
+	/* 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
 		if (timeoutTimer) clearTimeout(timeoutTimer);
 		timeoutTimer = setTimeout(() => {
 			console.log("No click within 30 sec.🐌");
@@ -194,9 +194,11 @@ export const handleConnection = (
 	// Handling a virus hit from a client
 	socket.on("virusClick", (elapsedTime) => {
 		const currentPlayer = socket.id;
-		const opponent = waitingPlayers.find((player) => player.socketId !== currentPlayer);
+		const opponent = waitingPlayers.find(
+			(player) => player.socketId !== currentPlayer
+		);
 		// console.log("socketId:", socketId)
-		console.log("elapsedTime:", elapsedTime)
+		console.log("elapsedTime:", elapsedTime);
 		clicksInRound++;
 		if (clicksInRound === 2) {
 			clicksInRound = 0;
@@ -207,8 +209,10 @@ export const handleConnection = (
 				io.emit("gameOver");
 			} else {
 				// Proceed to the next round
-			console.log("📌New round from virusClick in socket controller");
-			startRound(io);
+				console.log("📌New round from virusClick in socket controller");
+				setTimeout(() => {
+					startRound(io);
+				}, 5000);
 			}
 		}
 	});

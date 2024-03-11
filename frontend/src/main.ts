@@ -34,7 +34,9 @@ const usernameInputEl = document.querySelector(
 ) as HTMLInputElement;
 
 const gameFieldEl = document.querySelector(".game-field") as HTMLDivElement;
-const gameOverPageEl = document.querySelector("#game-over-page") as HTMLDivElement;
+const gameOverPageEl = document.querySelector(
+  "#game-over-page"
+) as HTMLDivElement;
 
 // Result display
 const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
@@ -47,7 +49,9 @@ const player2TimerEl = document.querySelector(
 ) as HTMLParagraphElement;
 
 // button for reset
-const startNewGameFormEl = document.querySelector("#startNewGameForm") as HTMLFormElement;
+const startNewGameFormEl = document.querySelector(
+  "#startNewGameForm"
+) as HTMLFormElement;
 
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
@@ -74,23 +78,24 @@ let startTimePlayer1: number;
 let startTimePlayer2: number;
 let roomId: string;
 
-
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
   const passedTime = currentTime - startTime;
 
-  const seconds = Math.floor(passedTime % 60000 / 1000);
+  const seconds = Math.floor((passedTime % 60000) / 1000);
   const milliseconds = passedTime % 1000;
 
-  const updatedTime = `${seconds.toString()}:${milliseconds.toString().padStart(3, "0")}`;
+  const updatedTime = `${seconds.toString()}:${milliseconds
+    .toString()
+    .padStart(3, "0")}`;
 
   timerElement.innerHTML = `${updatedTime}`;
 
   if (seconds >= 30) {
-   clearInterval(timerIntervalPlayer1);
-   clearInterval(timerIntervalPlayer2);
+    clearInterval(timerIntervalPlayer1);
+    // clearInterval(timerIntervalPlayer2);
 
-   const reationtime = currentTime - startTime;
+    const reationtime = currentTime - startTime;
     console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
 
     // Display result for active player
@@ -111,9 +116,10 @@ const startTimer = (username: string, playerNumber: string) => {
 
   if (playerNumber === socket.id) {
     startTimePlayer1 = Date.now();
-    timerIntervalPlayer1 = setInterval(() => 
-    timer(player1TimerEl, startTimePlayer1), 100);
-
+    timerIntervalPlayer1 = setInterval(
+      () => timer(player1TimerEl, startTimePlayer1),
+      100
+    );
   } /* else {
     startTimePlayer2 = Date.now();
     timerIntervalPlayer2 = setInterval(() => 
@@ -122,17 +128,14 @@ const startTimer = (username: string, playerNumber: string) => {
 };
 
 const stopTimer = (playerNumber: string) => {
-
   const elapsedTime = Date.now() - startTimePlayer1;
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
-            socket.emit("virusClick", elapsedTime);
-
-
+    socket.emit("virusClick", elapsedTime);
   } else {
     clearInterval(timerIntervalPlayer2);
   }
-}
+};
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -360,7 +363,7 @@ socket.on("startGame", () => {
   gameFieldEl.style.display = "flex";
 
   console.log("Game started!");
-  
+
   // Initialize or reset your game here
   // console.log("StartTimer i startGame");
   // socket.emit("startTimer");
@@ -370,27 +373,27 @@ socket.on("virusLogic", (position, delay) => {
   console.log(`in viruslogic 🐣New virus position: ${position}`);
 
   // Remove "virus" class from all grid items
-  
+
   setTimeout(() => {
-  gridItems.forEach((item) => {
-    item.classList.remove("virus");
-  });
+    gridItems.forEach((item) => {
+      item.classList.remove("virus");
+    });
 
-  // Add "virus" class to the new position
-  const newPosition = Number(position);
-  if (
-    !isNaN(newPosition) &&
-    newPosition >= 0 &&
-    newPosition < gridItems.length
-  ) {
-    gridItems[newPosition].classList.add("virus");
-    if (socket.id && username) {
-    startTimer(username, socket.id);
-    };
+    // Add "virus" class to the new position
+    const newPosition = Number(position);
+    if (
+      !isNaN(newPosition) &&
+      newPosition >= 0 &&
+      newPosition < gridItems.length
+    ) {
+      gridItems[newPosition].classList.add("virus");
+      if (socket.id && username) {
+        startTimer(username, socket.id);
+      }
 
-    // console.log("StartTimer i newPosition");
-    // socket.emit("startTimer");
-  }
+      // console.log("StartTimer i newPosition");
+      // socket.emit("startTimer");
+    }
   }, delay);
 });
 
@@ -404,7 +407,7 @@ gridItems.forEach((gridItem) => {
       gridItem.classList.remove("virus");
       // socket.emit("stopTimer", "username");
       if (username && socket.id) {
-        stopTimer(socket.id)
+        stopTimer(socket.id);
         // socket.emit("virusClick", username);
         console.log("User som klickade", username, "socketId:", socket.id);
       }
@@ -413,7 +416,6 @@ gridItems.forEach((gridItem) => {
     }
   });
 });
-
 
 socket.on("gameOver", () => {
   console.log("Spelet är över!");
