@@ -88,7 +88,7 @@ export const handleConnection = (
 						// Wait one interval after reaching 0 before clearing
 						clearInterval(countdownInterval);
 						setTimeout(() => {
-							io.emit("startGame");
+							io.emit("startGame", player.username);
 						}, 100);
 					}
 				}, 1000);
@@ -110,45 +110,58 @@ export const handleConnection = (
 		}
 	});
 
-	function stopTimer(socketId: string) {
-		console.log("socketId", socketId);
+	socket.on("stopTimer", () => {
+		const currentPlayerId = socket.id;
 
-		const playerClicked = socketId;
-		console.log("playerClicked", playerClicked);
+		io.emit("stopTimer", currentPlayerId);
 
-		if (isGameRunning) {
-			isGameRunning = false;
+		const opponent = waitingPlayers.find((player) => player.socketId !== currentPlayerId);
 
-			// Clear the interval and calculate elapsed time
-			clearInterval(intervalId);
-			const elapsedTime = Date.now() - startTime;
-			console.log("elapsedTime stopTimer function", elapsedTime);
+		if (opponent) {
+			// Emit the stoptimer event to opponent
+			io.to(opponent.socketId).emit("stopTimer", currentPlayerId);
+		}
+	});
 
-			console.log("stopTimer, socketId: ", socketId);
-			console.log("stopTimer, elapsedTime: ", elapsedTime);
+	// function stopTimer(socketId: string) {
+	// 	console.log("socketId", socketId);
+
+	// 	const playerClicked = socketId;
+	// 	console.log("playerClicked", playerClicked);
+
+	// 	if (isGameRunning) {
+	// 		isGameRunning = false;
+
+	// 		// Clear the interval and calculate elapsed time
+	// 		clearInterval(intervalId);
+	// 		const elapsedTime = Date.now() - startTime;
+	// 		console.log("elapsedTime stopTimer function", elapsedTime);
+
+	// 		console.log("stopTimer, socketId: ", socketId);
+	// 		console.log("stopTimer, elapsedTime: ", elapsedTime);
 
 
 			// Emit a signal to all clients to stop their timers
-			io.emit("stopTimer", {
-				playerId: socketId,
-				elapsedTime,
-			});
-		}
-	}
+			// io.emit("stopTimer", {
+			// 	playerId: socketId,
+			// 	elapsedTime,
+			// });
+	// 	}
+	// }
 
-	socket.on("startTimer", () => {
-		if (!isGameRunning) {
-			isGameRunning = true;
+	// socket.on("startTimer", () => {
+	// 	if (!isGameRunning) {
+	// 		isGameRunning = true;
 
-			startTime = Date.now();
+	// 		startTime = Date.now();
 
-			// Update timer every millisecond
-			intervalId = setInterval(() => {
-				const elapsedTime = Date.now() - startTime;
-				io.emit("updateTimer", elapsedTime);
-			}, 100);
-		}
-	});
+	// 		// Update timer every millisecond
+	// 		intervalId = setInterval(() => {
+	// 			const elapsedTime = Date.now() - startTime;
+	// 			io.emit("updateTimer", elapsedTime);
+	// 		}, 100);
+	// 	}
+	// });
 
 	// socket.on("updateTimer", () => {});
 
@@ -193,7 +206,7 @@ export const handleConnection = (
 	// Handling a virus hit from a client
 	socket.on("hitVirus", () => {
 		handleVirusHit(socket.id, io);
-		stopTimer(socket.id);
+		// stopTimer(socket.id);
 	});
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
@@ -240,6 +253,7 @@ export const handleConnection = (
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
 			console.log("player.gameId", player.gameId);
+			//Här ska vi bara broadcasta till de rummet där en spelare lämnade ifrån // annars ingenting!!!
 			io.emit("playerLeft", {playerId: player.id });
 		}
 	});

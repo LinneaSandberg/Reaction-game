@@ -117,24 +117,88 @@ const usernamesDisplay = (username: string, opponent: string) => {
 };
 
 // Update timer to start counting from 0
-const updateTimer = (elapsedTime: number) => {
-  console.log("updatetimer i frontend: ", updateTimer);
-  const seconds = Math.floor((elapsedTime % 60000) / 1000);
-  const milliseconds = elapsedTime % 1000;
-  // console.log("elapsedTime", elapsedTime);
+// const updateTimer = (elapsedTime: number) => {
+//   console.log("updatetimer i frontend: ", updateTimer);
+//   const seconds = Math.floor((elapsedTime % 60000) / 1000);
+//   const milliseconds = elapsedTime % 1000;
+//   // console.log("elapsedTime", elapsedTime);
 
-  const formattedTime = `${String(seconds).padStart(2, "0")}:${String(
-    milliseconds
-  ).padStart(3, "0")}`;
+//   const formattedTime = `${String(seconds).padStart(2, "0")}:${String(
+//     milliseconds
+//   ).padStart(3, "0")}`;
 
-  if (player1TimerEl) {
-    player1TimerEl.innerText = `${formattedTime}`;
-  }
+//   if (player1TimerEl) {
+//     player1TimerEl.innerText = `${formattedTime}`;
+//   }
 
-  if (player2TimerEl) {
-    player2TimerEl.innerText = `${formattedTime}`;
+//   if (player2TimerEl) {
+//     player2TimerEl.innerText = `${formattedTime}`;
+//   }
+// };
+
+// Varibles for timer management
+// let startTime: number;
+let timerIntervalPlayer1: ReturnType<typeof setInterval>;
+let timerIntervalPlayer2: ReturnType<typeof setInterval>;
+let startTimePlayer1: number;
+let startTimePlayer2: number;
+let roomId: string;
+
+
+const timer = (timerElement: HTMLElement, startTime: number) => {
+  const currentTime = Date.now();
+  const passedTime = currentTime - startTime;
+
+  const seconds = Math.floor(passedTime / 1000);
+  const milliseconds = passedTime % 1000;
+
+  const updatedTime = `${seconds.toString()}:${milliseconds.toString().padStart(3, "0")}`;
+
+  timerElement.innerHTML = `${updatedTime}`;
+
+  if (seconds >= 30) {
+   clearInterval(timerIntervalPlayer1);
+   clearInterval(timerIntervalPlayer2);
+
+   const reationtime = currentTime - startTime;
+    console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
+
+    // Display result for active player
+    if (timerElement === player1TimerEl) {
+      console.log("Result for player 1: ", reationtime);
+    } else {
+      console.log("Result for player 2: ", reationtime);
+    }
   }
 };
+
+export const startTimer = (username: string, playerNumber: string) => {
+  console.log("startTimer: ", username);
+
+  // roomId = gameId;
+
+  // startTimePlayer2 = Date.now();
+
+  if (playerNumber === socket.id) {
+    startTimePlayer1 = Date.now();
+    timerIntervalPlayer1 = setInterval(() => 
+    timer(player1TimerEl, startTimePlayer1), 1);
+
+  } else {
+    startTimePlayer2 = Date.now();
+    timerIntervalPlayer2 = setInterval(() => 
+    timer(player2TimerEl, startTimePlayer2), 1);
+  }
+};
+
+export const stopTimer = (playerNumber: string) => {
+  if (playerNumber === socket.id) {
+    clearInterval(timerIntervalPlayer1);
+
+  } else {
+    clearInterval(timerIntervalPlayer2);
+  }
+}
 
 // Connect to Socket.IO Server
 console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
@@ -159,26 +223,26 @@ socket.io.on("reconnect", () => {
 });
 
 // listen for stopTimer
-socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  console.log("Stoptimer: NU BORD TIMERN STOPPAS!: ", playerId, elapsedTime);
-  const seconds = Math.floor(elapsedTime / 1000)
-    .toString()
-    .padStart(2, "0");
-  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
+// socket.on("stopTimer", ({ playerId, elapsedTime }) => {
+//   console.log("Stoptimer: NU BORD TIMERN STOPPAS!: ", playerId, elapsedTime);
+//   const seconds = Math.floor(elapsedTime / 1000)
+//     .toString()
+//     .padStart(2, "0");
+//   const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
 
-  // if (player1pEl && playerId === socket.id) {
-  if (playerId === socket.id) {
-    player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  } else if (playerId !== socket.id) {
-    player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  }
-});
+//   // if (player1pEl && playerId === socket.id) {
+//   if (playerId === socket.id) {
+//     player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
+//   } else if (playerId !== socket.id) {
+//     player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
+//   }
+// });
 
 // Listen for updateTimer
-socket.on("startTimer", (elapsedTime) => {
-  // Update UI with elapsed time
-  updateTimer(elapsedTime);
-});
+// socket.on("startTimer", (elapsedTime) => {
+//   // Update UI with elapsed time
+//   updateTimer(elapsedTime);
+// });
 
 socket.on("playerLeft", ({ playerId }) => {
   console.log("A user has left the game: ", playerId);
@@ -294,11 +358,15 @@ socket.on("countdown", (seconds) => {
 socket.on("startGame", () => {
   countdownPageEl.style.display = "none";
   gameFieldEl.style.display = "flex";
-
+  if (username && socket.id) {
+    startTimer(username, socket.id);
+  }
   // Initialize or reset your game here
-  console.log("StartTimer i startGame");
-  socket.emit("startTimer");
+  // console.log("StartTimer i startGame");
+  // socket.emit("startTimer");
 });
+
+
 
 socket.on("virusPosition", (position) => {
   // console.log(`New virus position: ${position}`);
@@ -317,9 +385,9 @@ socket.on("virusPosition", (position) => {
   ) {
     gridItems[newPosition].classList.add("virus");
 
-    console.log("StartTimer i newPosition");
+    // console.log("StartTimer i newPosition");
 
-    socket.emit("startTimer");
+    // socket.emit("startTimer");
   }
 });
 
@@ -332,8 +400,13 @@ gridItems.forEach((gridItem) => {
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
       // socket.emit("stopTimer", "username");
-      if (username) {
+
+      if (username && socket.id) {
         socket.emit("hitVirus", username);
+
+
+        socket.emit("stopTimer", socket.id);
+        stopTimer(socket.id);
         console.log("Username som klickade", username);
       }
       /* result++;
