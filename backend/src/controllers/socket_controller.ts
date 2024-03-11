@@ -89,7 +89,8 @@ export const handleConnection = (
 						// Wait one interval after reaching 0 before clearing
 						clearInterval(countdownInterval);
 						setTimeout(() => {
-							io.emit("startGame",virusPosition(),virusDelay());
+							io.emit("startGame");
+							//io.emit("virusLogic", virusPosition(), virusDelay());
 						}, 100);
 					}
 				}, 1000);
@@ -102,7 +103,7 @@ export const handleConnection = (
 					players: playersInRoom.map((p) => p.players),
 				});
 				initiateCountdown(io);
-				startGame(io);
+				startRound(io);
 			});
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
@@ -111,7 +112,7 @@ export const handleConnection = (
 		}
 	});
 
-	function stopTimer(socketId: string) {
+/* 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
 
 		const playerClicked = socketId;
@@ -131,9 +132,9 @@ export const handleConnection = (
 				elapsedTime,
 			});
 		}
-	}
+	} */
 
-	socket.on("startTimer", () => {
+/* 	socket.on("startTimer", () => {
 		if (!isGameRunning) {
 			isGameRunning = true;
 
@@ -145,19 +146,19 @@ export const handleConnection = (
 				io.emit("updateTimer", elapsedTime);
 			}, 100);
 		}
-	});
+	}); */
 
 	// socket.on("updateTimer", () => {});
 
 
-	function startGame(io: Server) {
+	function startRound(io: Server) {
 		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
-		console.log(`Skickar ny virusposition: ${newVirusPosition}`);
+		console.log(`🐉Skickar ny virusposition: ${newVirusPosition} från startGame i socket_controller`);
 		io.emit("virusLogic", newVirusPosition, newVirusDelay)
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
-		thirtySecTimer(io);
+		// thirtySecTimer(io);
 	}
 
 	function virusPosition(): number {
@@ -170,36 +171,42 @@ export const handleConnection = (
 	}
 
 
-	function thirtySecTimer(io: Server, remainingTime: number = 30000){
+/* 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
 		if (timeoutTimer) clearTimeout(timeoutTimer);
 		timeoutTimer = setTimeout(() => {
 			console.log("No click within 30 sec.🐌");
 			console.log(currentRound);
 		}, remainingTime);
-	}
+	} */
 
-	function virusSetup(io: Server) {
-		setTimeout(() => {
-			virusStartTime = Date.now();
-			virusActive = true;
-			virusPosition();
-			io.emit("virusLogic", virusPosition(), virusDelay());
-		}, virusDelay());
-	}
+	// function virusSetup(io: Server) {
+	// 	//setTimeout(() => {
+	// 		virusStartTime = Date.now();
+	// 		virusActive = true;
+	// 		console.log(`👾Skickar ny virusposition:från virusSetup i socket_controller`)
+	// 		//virusPosition();
+	// 		io.emit("virusLogic", virusPosition(), virusDelay());
+	// 	//}, virusDelay());
+	// }
 
 	// Handling a virus hit from a client
-	socket.on("virusClick", (username) => {
+	socket.on("virusClick", (elapsedTime) => {
+		const currentPlayer = socket.id;
+		const opponent = waitingPlayers.find((player) => player.socketId !== currentPlayer);
+		// console.log("socketId:", socketId)
+		console.log("elapsedTime:", elapsedTime)
 		clicksInRound++;
-		if (clicksInRound === 2) { // Assuming a 2-player game
+		if (clicksInRound === 2) {
 			clicksInRound = 0;
 			currentRound++;
+			console.log("currentRound", currentRound);
 			if (currentRound >= maxRounds) {
 				console.log("Triggering Game Over");
 				io.emit("gameOver");
 			} else {
 				// Proceed to the next round
-			console.log("New round");
-			virusSetup(io);
+			console.log("📌New round from virusClick in socket controller");
+			startRound(io);
 			}
 		}
 	});

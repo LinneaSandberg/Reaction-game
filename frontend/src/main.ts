@@ -49,6 +49,11 @@ const player2TimerEl = document.querySelector(
 // button for reset
 const startNewGameFormEl = document.querySelector("#startNewGameForm") as HTMLFormElement;
 
+// Connect to Socket.IO Server
+console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
+  io(SOCKET_HOST);
+
 // const player1ReactiontimeEl = document.querySelector(
 //   "#player1Reactiontime"
 // ) as HTMLParagraphElement;
@@ -62,6 +67,72 @@ const startNewGameFormEl = document.querySelector("#startNewGameForm") as HTMLFo
 
 player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
+
+let timerIntervalPlayer1: ReturnType<typeof setInterval>;
+let timerIntervalPlayer2: ReturnType<typeof setInterval>;
+let startTimePlayer1: number;
+let startTimePlayer2: number;
+let roomId: string;
+
+
+const timer = (timerElement: HTMLElement, startTime: number) => {
+  const currentTime = Date.now();
+  const passedTime = currentTime - startTime;
+
+  const seconds = Math.floor(passedTime % 60000 / 1000);
+  const milliseconds = passedTime % 1000;
+
+  const updatedTime = `${seconds.toString()}:${milliseconds.toString().padStart(3, "0")}`;
+
+  timerElement.innerHTML = `${updatedTime}`;
+
+  if (seconds >= 30) {
+   clearInterval(timerIntervalPlayer1);
+   clearInterval(timerIntervalPlayer2);
+
+   const reationtime = currentTime - startTime;
+    console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
+
+    // Display result for active player
+    if (timerElement === player1TimerEl) {
+      console.log("Result for player 1: ", reationtime);
+    } else {
+      console.log("Result for player 2: ", reationtime);
+    }
+  }
+};
+
+const startTimer = (username: string, playerNumber: string) => {
+  console.log("startTimer: ", username);
+
+  // roomId = gameId;
+
+  //startTimePlayer2 = Date.now();
+
+  if (playerNumber === socket.id) {
+    startTimePlayer1 = Date.now();
+    timerIntervalPlayer1 = setInterval(() => 
+    timer(player1TimerEl, startTimePlayer1), 100);
+
+  } /* else {
+    startTimePlayer2 = Date.now();
+    timerIntervalPlayer2 = setInterval(() => 
+    timer(player2TimerEl, startTimePlayer2), 100);
+  } */
+};
+
+const stopTimer = (playerNumber: string) => {
+
+  const elapsedTime = Date.now() - startTimePlayer1;
+  if (playerNumber === socket.id) {
+    clearInterval(timerIntervalPlayer1);
+            socket.emit("virusClick", elapsedTime);
+
+
+  } else {
+    clearInterval(timerIntervalPlayer2);
+  }
+}
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -136,11 +207,6 @@ const updateTimer = (elapsedTime: number) => {
   }
 };
 
-// Connect to Socket.IO Server
-console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
-const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
-  io(SOCKET_HOST);
-
 // Listen for when connection is established
 socket.on("connect", () => {
   console.log("💥 Connected to the server", SOCKET_HOST);
@@ -159,7 +225,7 @@ socket.io.on("reconnect", () => {
 });
 
 // listen for stopTimer
-socket.on("stopTimer", ({ playerId, elapsedTime }) => {
+/* socket.on("stopTimer", ({ playerId, elapsedTime }) => {
   const seconds = Math.floor(elapsedTime / 1000)
     .toString()
     .padStart(2, "0");
@@ -171,7 +237,7 @@ socket.on("stopTimer", ({ playerId, elapsedTime }) => {
   } else if (playerId !== socket.id) {
     player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
   }
-});
+}); */
 
 // Listen for updateTimer
 socket.on("startTimer", (elapsedTime) => {
@@ -293,16 +359,20 @@ socket.on("countdown", (seconds) => {
 socket.on("startGame", () => {
   countdownPageEl.style.display = "none";
   gameFieldEl.style.display = "flex";
+
+  console.log("Game started!");
   
   // Initialize or reset your game here
-  console.log("StartTimer i startGame");
-  socket.emit("startTimer");
+  // console.log("StartTimer i startGame");
+  // socket.emit("startTimer");
 });
 
-socket.on("virusLogic", (position) => {
-  // console.log(`New virus position: ${position}`);
+socket.on("virusLogic", (position, delay) => {
+  console.log(`in viruslogic 🐣New virus position: ${position}`);
 
   // Remove "virus" class from all grid items
+  
+  setTimeout(() => {
   gridItems.forEach((item) => {
     item.classList.remove("virus");
   });
@@ -315,11 +385,14 @@ socket.on("virusLogic", (position) => {
     newPosition < gridItems.length
   ) {
     gridItems[newPosition].classList.add("virus");
+    if (socket.id && username) {
+    startTimer(username, socket.id);
+    };
 
-    console.log("StartTimer i newPosition");
-
-    socket.emit("startTimer");
+    // console.log("StartTimer i newPosition");
+    // socket.emit("startTimer");
   }
+  }, delay);
 });
 
 //Add event listener to each grid item to remove virus on click.
@@ -331,8 +404,9 @@ gridItems.forEach((gridItem) => {
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
       // socket.emit("stopTimer", "username");
-      if (username) {
-        socket.emit("virusClick", username);
+      if (username && socket.id) {
+        stopTimer(socket.id)
+        // socket.emit("virusClick", username);
         console.log("User som klickade", username, "socketId:", socket.id);
       }
       /* result++;
