@@ -40,12 +40,14 @@ export { isGameRunning, startTime, intervalId };
 let userSocketMap: UserSocketMap = {};
 
 //Game variables
-let currentRound = 0;
+//let currentRound = 0;
 const maxRounds = 10;
 let clicksInRound = 0;
 let virusActive = false;
 let virusStartTime: number;
 let socketToGameMap: Record<string, string> = {};
+let gameStateMap: Record<string, {currentRound: number, clicksInRound: number, virusActive: boolean}> = {};
+
 
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -136,6 +138,15 @@ export const handleConnection = (
 		}
 
 		function startRound(io: Server, gameId: string) {
+
+			if (!gameStateMap[gameId]) {
+				gameStateMap[gameId] = { currentRound: 1, clicksInRound: 0, virusActive: false };
+			} else {
+				// Increment round or handle game continuation logic
+				gameStateMap[gameId].currentRound++;
+				gameStateMap[gameId].clicksInRound = 0; // Reset for new round
+				gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
+			}
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
 			console.log(
@@ -165,11 +176,11 @@ export const handleConnection = (
 		socket.on("virusClick", ({ elapsedTime }) => {
 			const playerId: string = socket.id;
 			const gameId = socketToGameMap[socket.id];
-			if (!gameId) {
+			if (!gameId || !gameStateMap[gameId]) {
 				console.error("Game ID not found for socket:", socket.id);
 				return; // Handle this error as appropriate
 			}
-			console.log("Game ID for virusClick:", gameId);
+			console.log(`Game ID for virusClick: ${gameId}, Current Round: ${gameStateMap[gameId].currentRound}`);
 			console.log("elapsedTime:", elapsedTime);
 
 
@@ -199,11 +210,11 @@ export const handleConnection = (
 			clicksInRound++;
 			if (clicksInRound === 2) {
 				clicksInRound = 0;
-				currentRound++;
-				console.log("currentRound", currentRound);
-				if (currentRound >= maxRounds) {
+				//currentRound++;
+				//console.log("currentRound", currentRound);
+				if (gameStateMap[gameId].currentRound >= maxRounds) {
 					console.log("Triggering Game Over");
-					currentRound = 0;
+					gameStateMap[gameId].currentRound = 0;
 					io.to(gameId).emit("gameOver");
 				} else {
 					// Proceed to the next round
