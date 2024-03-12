@@ -148,16 +148,6 @@ const stopTimer = (playerNumber: string) => {
   }
 };
 
-const handlePlayerJoinRequest = (response: PlayerJoinResponse) => {
-  console.log("Join was successfull", response);
-
-  if (!response.success || !response.game) {
-		alert("Could not join room (for some reason)");
-		return;
-	}
-}
-
-
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -259,59 +249,12 @@ socket.emit("highscore", (highscores) => {
     .join("");
 });
 
-// listen for stopTimer
-/* socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  const seconds = Math.floor(elapsedTime / 1000)
-    .toString()
-    .padStart(2, "0");
-  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-  // if (player1pEl && playerId === socket.id) {
-  if (playerId === socket.id) {
-    player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  } else if (playerId !== socket.id) {
-    player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  }
-}); */
-
-// Listen for updateTimer
-// socket.on("startTimer", (elapsedTime) => {
-//   // Update UI with elapsed time
-//   updateTimer(elapsedTime);
-// });
-
 socket.on("playerLeft", (username) => {
   console.log("A user has left the game: ", username);
 
   // Send that information to the other player in the room
   showDisconnect();
 });
-
-// socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
-//   console.log(`Player ${playerId} clicked on the virus!`);
-
-//   if (timerInterval) {
-//     clearInterval(timerInterval);
-//     timerInterval = null;
-//   }
-
-//   if (playerId === socket.id) {
-//     reactionTime = playerReactionTime;
-
-//     // Uppdatera UI med reaktionstiden för spelare 1
-//     if (player1ReactiontimeEl) {
-//       player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
-//     }
-//   } else {
-//     // Uppdatera UI med reaktionstiden för spelare 2
-//     if (player2ReactiontimeEl) {
-//       player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
-//     }
-
-//     // Update UI with player's reaction time
-//     // Implement this function based on your UI structure
-//   }
-// });
 
 if (startNewGameFormEl) {
   startNewGameFormEl.addEventListener("submit", (e) => {
@@ -343,8 +286,8 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, roomId,  handlePlayerJoinRequest);
-  console.log("Emitted 'playerJoinRequest' event to server", username);
+  socket.emit("playerJoinRequest", username, roomId);
+  console.log("Emitted 'playerJoinRequest' event to server", username, roomId);
 
   // function to display the waiting-lobby
   showWaitingRoom();
@@ -352,7 +295,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
     console.log(
       "Room created: ",
-      event.roomId,
+      event.gameId,
       "With players: ",
       event.players
     );

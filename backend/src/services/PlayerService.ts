@@ -30,3 +30,11 @@ export const findPlayer = (gameId: string) => {
         },
     });
 }
+
+export const getgame = (gameId: string) => {
+    return prisma.game.findUnique({
+        where: {
+            id: gameId,
+        },
+    });
+}
