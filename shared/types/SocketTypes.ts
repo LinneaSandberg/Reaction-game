@@ -26,6 +26,7 @@ export interface ClientToServerEvents {
   ) => void;
   highscore: (callback: (highscores: Highscore[]) => void) => void;
   virusClick: (event: stopTimerEvent) => void;
+  gameScore: (callback: (points: Points) => void) => void;
 }
 
 export interface GameInfo extends Game {
@@ -77,3 +78,5 @@ export interface Highscores {
   username: string;
   highscore: number;
 }
+
+export type Points = Record<string, number>;

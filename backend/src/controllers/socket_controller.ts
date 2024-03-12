@@ -230,8 +230,10 @@ export const handleConnection = (
 
 			const playerIds = Object.keys(reactionTimes);
 			const allPlayersHaveEnoughEntries = playerIds.every(
-				(id) => reactionTimes[id].length >= 3
+				(id) => reactionTimes[id].length >= 10
 			);
+
+			calculatePoints(playerId, reactionTimes, maxRounds);
 
 			if (allPlayersHaveEnoughEntries) {
 				for (const playerId of playerIds) {
@@ -304,6 +306,47 @@ export const handleConnection = (
 				}
 			}
 		};
+	});
+	const points: Record<string, number> = {};
+
+	const calculatePoints = (
+		playerId: string,
+		reactionTimes: ReactionTimes,
+		maxRounds: number
+	) => {
+		// const points: Record<string, number> = {};
+
+		for (let round = 0; round < 3; round++) {
+			let fastestTime = Infinity;
+			let fastestPlayerId = "";
+
+			for (const playerId in reactionTimes) {
+				const playerTimes = reactionTimes[playerId];
+
+				if (
+					playerTimes.length > round &&
+					playerTimes[round] < fastestTime
+				) {
+					fastestTime = playerTimes[round];
+					fastestPlayerId = playerId;
+				}
+			}
+
+			if (fastestPlayerId) {
+				if (!points[fastestPlayerId]) {
+					points[fastestPlayerId] = 0;
+				}
+
+				points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
+			}
+		}
+		console.log("playerId", playerId);
+		console.log("points", points);
+		return points;
+	};
+
+	socket.on("gameScore", (callback) => {
+		callback(points);
 	});
 
 	socket.on("highscore", async (callback) => {

@@ -2,6 +2,7 @@ import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
   PlayerJoinResponse,
+  Points,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
@@ -257,6 +258,10 @@ socket.emit("highscore", (highscores) => {
       (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
     )
     .join("");
+});
+
+socket.emit("gameScore", (points) => {
+  console.log("points", points);
 });
 
 // listen for stopTimer
