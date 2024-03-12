@@ -109,6 +109,11 @@ export const handleConnection = (
 			}
 
 			playersInRoom.forEach((player) => {
+				const playerSocket = io.sockets.sockets.get(player.socketId);
+				if (playerSocket) {
+					playerSocket.join(roomId);
+				}
+
 				// Join room `roomId`
 				socket.join(roomId);
 				io.to(roomId).emit("roomCreated", {
@@ -359,6 +364,8 @@ export const handleConnection = (
 			// const playerGameId = playerLeftInRoom?.players[0].gameId;
 			// const playerLeftout = player.id;
 			// console.log("PlayerleftOut: ", playerLeftout);
+
+			// Broadcast a notice to the room that the user has left
 
 			// Broadcast a notice to the room that the user has left
 
