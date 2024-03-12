@@ -96,16 +96,16 @@ export const handleConnection = (
 				}, 1000);
 			}
 
-			const gameId = game.id;
+			const roomId = game.id;
 			playersInRoom.forEach((player) => {
 				io.to(player.socketId).emit("roomCreated", {
-					gameId,
+					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				console.log("After `Playersinroom` roomId: ", gameId);
+				console.log("After `Playersinroom` roomId: ", roomId);
 				console.log("After `Playersinroom` players in room: ", game.players);
 				// Join room `roomId`
-				socket.join(gameId);
+				socket.join(roomId);
 			});
 			initiateCountdown(io);
 			startRound(io);
@@ -213,9 +213,9 @@ export const handleConnection = (
 			} else {
 				// Proceed to the next round
 				console.log("📌New round from virusClick in socket controller");
-				setTimeout(() => {
+				// setTimeout(() => {
 					startRound(io);
-				}, 4000);
+				// }, 1000);
 			}
 		}
 	});
@@ -260,7 +260,7 @@ export const handleConnection = (
 
 		const playerLeftInRoom = await findPlayer(player.gameId);
 		console.log("PlayerleftInroom: ", playerLeftInRoom);
-		console.log("playerLeftInRoom.players: ", playerLeftInRoom?.players[0].gameId);
+		// console.log("playerLeftInRoom.players: ", playerLeftInRoom?.players[0].gameId);
 
 
 			// Remove player after he plays
@@ -268,20 +268,16 @@ export const handleConnection = (
 		console.log("DeletePlayer: ", deletedPlayer);
 
 
-		const playerGameId = playerLeftInRoom?.players[0].gameId;
+		// const playerGameId = playerLeftInRoom?.players[0].gameId;
 		// const playerLeftout = player.id;
 		// console.log("PlayerleftOut: ", playerLeftout);
 
 		// Broadcast a notice to the room that the user has left
 	
-		if (playerGameId) {
 			console.log("socket.id på den som är deletead: ", socket.id);
 			console.log("player.gameId", player.gameId);
-			console.log("playerGameId", playerGameId);
 
-			io.to(playerGameId).emit("playerLeft", player.username);
-		}
-
+			io.to(player.gameId).emit("playerLeft", player.username);
 		}
 
 	});

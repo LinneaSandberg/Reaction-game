@@ -75,7 +75,7 @@ player2TimerEl.innerText = `00:000`;
 let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer1: number;
-// let startTimePlayer2: number;
+let startTimePlayer2: number;
 let roomId: string;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
@@ -129,13 +129,22 @@ const startTimer = (username: string, playerNumber: string) => {
 
 const stopTimer = (playerNumber: string) => {
   const elapsedTime = Date.now() - startTimePlayer1;
+  const secoundPlayerElaspsedTime = Date.now() - startTimePlayer2;
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
     socket.emit("virusClick", elapsedTime);
+    player2TimerEl.innerHTML = `${elapsedTime}`;
+
   } else {
     clearInterval(timerIntervalPlayer2);
+    player1TimerEl.innerHTML = `${secoundPlayerElaspsedTime}`;
+    
   }
+
+
 };
+
+
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -327,7 +336,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
     console.log(
       "Room created: ",
-      event.gameId,
+      event.roomId,
       "With players: ",
       event.players
     );

@@ -30,7 +30,7 @@ export interface PlayerJoinResponse {
 }
 
 export interface RoomCreatedEvent {
-  gameId: string;
+  roomId: string;
   players: Player[];
 }
 
