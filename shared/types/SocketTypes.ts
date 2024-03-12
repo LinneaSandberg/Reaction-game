@@ -13,18 +13,17 @@ export interface ServerToClientEvents {
   virusHitConfirmed: () => void;
   gameOver: () => void;
   reactionTimeForBoth: (elapsedTime: number) => void;
+  gameScore: (points: Points) => void;
 }
 
 // Events emitted by the client to the server
 export interface ClientToServerEvents {
   // playerJoinRequest: (username: string, callback: (success: boolean) => void) => void;
   roomForPlayers: (callback: (rooms: Room[]) => void) => void;
-  playerJoinRequest: (
-    username: string,
-    roomId: string) => void;
+  playerJoinRequest: (username: string, roomId: string) => void;
   highscore: (callback: (highscores: Highscore[]) => void) => void;
   virusClick: (event: stopTimerEvent) => void;
-  gameScore: (callback: (points: Points) => void) => void;
+  gameScore: () => void;
 }
 
 export interface GameInfo extends Game {
