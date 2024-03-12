@@ -138,7 +138,7 @@ const stopTimer = (playerNumber: string) => {
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
     console.log("virusClick: elapsedTime", elapsedTime);
-    socket.emit("virusClick", roomId, { playerId: socket.id, elapsedTime: elapsedTime });
+    socket.emit("virusClick", { playerId: socket.id, elapsedTime: elapsedTime });
     // player2TimerEl.innerHTML = `${elapsedTime}`;
 
   } else {

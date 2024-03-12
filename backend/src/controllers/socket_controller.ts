@@ -154,7 +154,7 @@ export const handleConnection = (
 		}
 
 		// Handling a virus hit from a client
-		socket.on("virusClick", async (gameId, { playerId, elapsedTime }) => {
+		socket.on("virusClick", async ({ playerId, elapsedTime }) => {
 			// const playerId: string = socket.id;
 			console.log("elapsedTime:", elapsedTime);
 			

@@ -23,7 +23,7 @@ export interface ClientToServerEvents {
     username: string,
     roomId: string) => void;
   highscore: (callback: (highscores: Highscore[]) => void) => void;
-  virusClick: (gameId: string, event: stopTimerEvent) => void;
+  virusClick: (event: stopTimerEvent) => void;
 }
 
 export interface GameInfo extends Game {
