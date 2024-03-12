@@ -45,6 +45,7 @@ const maxRounds = 10;
 let clicksInRound = 0;
 let virusActive = false;
 let virusStartTime: number;
+let socketToGameMap: Record<string, string> = {};
 
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -107,14 +108,18 @@ export const handleConnection = (
 				}, 1000);
 			}
 
+
 			playersInRoom.forEach((player) => {
 				const playerSocket = io.sockets.sockets.get(player.socketId);
+				let gameId = game.id;
+
 				if (playerSocket) {
 					playerSocket.join(gameId);
+					socketToGameMap[player.socketId] = gameId;
 				}
 
 				// Join room `gameId`
-				// socket.join(gameId);
+				 socket.join(gameId);
 				io.to(gameId).emit("roomCreated", {
 					gameId,
 					players: playersInRoom.map((p) => p.players),
@@ -130,7 +135,7 @@ export const handleConnection = (
 			});
 		}
 
-		function startRound(io: Server, roomId: string) {
+		function startRound(io: Server, gameId: string) {
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
 			console.log(
@@ -154,10 +159,19 @@ export const handleConnection = (
 			return Math.floor(Math.random() * 9000) + 1000;
 		}
 
+
+
 		// Handling a virus hit from a client
 		socket.on("virusClick", ({ elapsedTime }) => {
 			const playerId: string = socket.id;
+			const gameId = socketToGameMap[socket.id];
+			if (!gameId) {
+				console.error("Game ID not found for socket:", socket.id);
+				return; // Handle this error as appropriate
+			}
+			console.log("Game ID for virusClick:", gameId);
 			console.log("elapsedTime:", elapsedTime);
+
 
 			// socket.emit("reactionTimeForBoth", elapsedTime);
 
@@ -190,7 +204,7 @@ export const handleConnection = (
 				if (currentRound >= maxRounds) {
 					console.log("Triggering Game Over");
 					currentRound = 0;
-					io.emit("gameOver");
+					io.to(gameId).emit("gameOver");
 				} else {
 					// Proceed to the next round
 					console.log(
