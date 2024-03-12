@@ -102,6 +102,8 @@ export const handleConnection = (
 					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
+				// Join room `roomId`
+				socket.join(roomId);
 			});
 			initiateCountdown(io);
 			startRound(io);
@@ -219,12 +221,12 @@ export const handleConnection = (
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
 
-		const index = waitingPlayers.findIndex(
-			(player) => player.socketId === socket.id
-		);
-		if (index !== -1) {
-			waitingPlayers.splice(index, 1);
-		}
+		// const index = waitingPlayers.findIndex(
+		// 	(player) => player.socketId === socket.id
+		// );
+		// if (index !== -1) {
+		// 	waitingPlayers.splice(index, 1);
+		// }
 
 		// Find player to know what room that player was in
 		const player = await getPlayer(socket.id);
@@ -238,7 +240,7 @@ export const handleConnection = (
 
 		// Find and remove the player from the room in MongoDB
 		if (player.gameId) {
-			await prisma.game.update({
+			const updatePlayer = await prisma.game.update({
 				where: {
 					id: player.gameId,
 				},
@@ -250,17 +252,20 @@ export const handleConnection = (
 					},
 				},
 			});
+			console.log("updateplayer: ", updatePlayer);
 		}
 
 		// Remove player after he plays
 		await deletePlayer(socket.id);
 
-		const playerLeftout = player.id;
+		// const playerLeftout = player.id;
+		// console.log("PlayerleftOut: ", playerLeftout);
 
 		// Broadcast a notice to the room that the user has left
 		if (player.gameId) {
+			console.log("socket.id: ", socket.id);
 			console.log("player.gameId", player.gameId);
-			io.emit("playerLeft", { playerId: player.id });
+			io.to(player.gameId).emit("playerLeft", player.username);
 		}
 	});
 };

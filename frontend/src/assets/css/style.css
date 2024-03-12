@@ -10,6 +10,12 @@
   background-color: grey;
 }
 
+#submit-username, #startGame-submit {
+  border: 2px solid greenyellow;
+  background-color: lightgray;
+  border-radius: 10px;
+}
+
 ul {
   list-style-type: none;
   margin: 0;
@@ -35,6 +41,7 @@ li {
 .startPageForm {
   text-align: center;
   margin-top: 15%;
+  
 }
 
 .lobby {
@@ -139,10 +146,21 @@ li {
   text-align: center;
 }
 
+#startNewGameForm {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
 #headerNoob {
+  margin-top: 2rem;
   text-align: center;
-  color: yellowgreen;
-  background-color: grey;
+}
+
+#paraNoob {
+  margin-top: 1rem;
+  text-align: center;
 }
 
 #game-over-page {
