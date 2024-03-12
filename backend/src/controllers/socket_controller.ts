@@ -50,7 +50,8 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username: string) => {
+	socket.on("playerJoinRequest", async (username, roomId, callback) => {
+		debug("Player %s wants to join the game %s", username, roomId);
 		userSocketMap[username] = socket.id;
 
 		const player = await prisma.player.create({
@@ -204,9 +205,11 @@ export const handleConnection = (
 	// }
 
 	// Handling a virus hit from a client
-	socket.on("virusClick", (elapsedTime) => {
+	socket.on("virusClick", ({ elapsedTime }) => {
 		const playerId: string = socket.id;
 		console.log("elapsedTime:", elapsedTime);
+
+		// socket.emit("reactionTimeForBoth", elapsedTime);
 
 		if (!reactionTimes[playerId]) {
 			reactionTimes[playerId] = [];
@@ -241,9 +244,9 @@ export const handleConnection = (
 			} else {
 				// Proceed to the next round
 				console.log("📌New round from virusClick in socket controller");
-				setTimeout(() => {
-					startRound(io);
-				}, 1000);
+				// setTimeout(() => {
+				startRound(io);
+				// }, 1000);
 			}
 		}
 	});
@@ -329,10 +332,7 @@ export const handleConnection = (
 
 			const playerLeftInRoom = await findPlayer(player.gameId);
 			console.log("PlayerleftInroom: ", playerLeftInRoom);
-			// console.log(
-			// 	"playerLeftInRoom.players: ",
-			// 	playerLeftInRoom?.players[0].gameId
-			// );
+			// console.log("playerLeftInRoom.players: ", playerLeftInRoom?.players[0].gameId);
 
 			// Remove player after he plays
 			const deletedPlayer = await deletePlayer(socket.id);
@@ -342,11 +342,14 @@ export const handleConnection = (
 			// const playerLeftout = player.id;
 			// console.log("PlayerleftOut: ", playerLeftout);
 
+			// const playerGameId = playerLeftInRoom?.players[0].gameId;
+			// const playerLeftout = player.id;
+			// console.log("PlayerleftOut: ", playerLeftout);
+
 			// Broadcast a notice to the room that the user has left
 
 			console.log("socket.id på den som är deletead: ", socket.id);
 			console.log("player.gameId", player.gameId);
-			// console.log("playerGameId", playerGameId);
 
 			io.to(player.gameId).emit("playerLeft", player.username);
 		}

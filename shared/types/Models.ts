@@ -1,5 +1,10 @@
 export {};
 
+export interface Game {
+  id: string;
+  name: string;
+}
+
 export interface Room {
   roomId: string;
   players: Player[];

@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
+  PlayerJoinResponse,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
@@ -78,7 +79,7 @@ player2TimerEl.innerText = `00:000`;
 let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer1: number;
-// let startTimePlayer2: number;
+let startTimePlayer2: number;
 let roomId: string;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
@@ -132,13 +133,31 @@ const startTimer = (username: string, playerNumber: string) => {
 
 const stopTimer = (playerNumber: string) => {
   const elapsedTime = Date.now() - startTimePlayer1;
+  // const secoundPlayerElaspsedTime = Date.now() - startTimePlayer2;
+
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
-    socket.emit("virusClick", elapsedTime);
+    console.log("virusClick: elapsedTime", elapsedTime);
+    socket.emit("virusClick", { playerId: socket.id, elapsedTime: elapsedTime });
+    // player2TimerEl.innerHTML = `${elapsedTime}`;
+
   } else {
     clearInterval(timerIntervalPlayer2);
+    // player1TimerEl.innerHTML = `${secoundPlayerElaspsedTime}`;
+    
   }
 };
+
+const handlePlayerJoinRequest = (response: PlayerJoinResponse) => {
+  console.log("Join was successfull", response);
+
+  if (!response.success || !response.game) {
+		alert("Could not join room (for some reason)");
+		return;
+	}
+}
+
+
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -324,13 +343,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, (response) => {
-    if (response.success) {
-      console.log("Player joined successfully!");
-    } else {
-      console.error("Player join failed!");
-    }
-  });
+  socket.emit("playerJoinRequest", username, roomId,  handlePlayerJoinRequest);
   console.log("Emitted 'playerJoinRequest' event to server", username);
 
   // function to display the waiting-lobby
@@ -380,6 +393,10 @@ socket.on("startGame", () => {
   // console.log("StartTimer i startGame");
   // socket.emit("startTimer");
 });
+
+socket.on("reactionTimeForBoth", (elapsedTime: number) => {
+  console.log("Detta är elapsedTime från reactionTimeForBoth: ", elapsedTime);
+})
 
 socket.on("virusLogic", (position, delay) => {
   console.log(`in viruslogic 🐣New virus position: ${position}`);
