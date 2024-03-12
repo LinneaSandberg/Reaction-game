@@ -51,7 +51,6 @@ export const handleConnection = (
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
 	socket.on("playerJoinRequest", async (username, roomId, callback) => {
-		debug("Player %s wants to join the game %s", username, roomId);
 		userSocketMap[username] = socket.id;
 
 		const player = await prisma.player.create({
@@ -85,28 +84,34 @@ export const handleConnection = (
 					players: true,
 				},
 			});
+			const roomId = game.id;
+			console.log("roomId: ", roomId);
+
+			debug("Player %s wants to join the game %s", username, roomId);
 
 			function initiateCountdown(
 				io: Server<ClientToServerEvents, ServerToClientEvents>
 			) {
 				let countdown = 3;
 				const countdownInterval = setInterval(() => {
-					io.emit("countdown", countdown);
+					io.to(roomId).emit("countdown", countdown);
 					countdown--;
 					if (countdown < -1) {
 						// Wait one interval after reaching 0 before clearing
 						clearInterval(countdownInterval);
 						setTimeout(() => {
-							io.emit("startGame");
+							io.to(roomId).emit("startGame");
+							// io.emit("startGame");
 							//io.emit("virusLogic", virusPosition(), virusDelay());
 						}, 100);
 					}
 				}, 1000);
 			}
 
-			const roomId = game.id;
 			playersInRoom.forEach((player) => {
-				io.to(player.socketId).emit("roomCreated", {
+				// Join room `roomId`
+				socket.join(roomId);
+				io.to(roomId).emit("roomCreated", {
 					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
@@ -121,13 +126,35 @@ export const handleConnection = (
 			initiateCountdown(io);
 			startRound(io);
 		} else {
-			io.to(socket.id).emit("waitingForPlayer", {
+			io.to(roomId).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
-	});
 
-	/* 	function stopTimer(socketId: string) {
+		function startRound(io: Server) {
+			const newVirusDelay = virusDelay();
+			const newVirusPosition = virusPosition();
+			console.log(
+				`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
+			);
+			console.log("In startRound, player.gameId: ", roomId);
+			io.to(roomId).emit("virusLogic", newVirusPosition, newVirusDelay);
+			// io.emit("virusLogic", newVirusPosition, newVirusDelay);
+			virusActive = true; // Allow virus to be "hit" again
+			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
+			// thirtySecTimer(io);
+		}
+
+		function virusPosition(): number {
+			return Math.floor(Math.random() * 25);
+		}
+
+		//Random virus delay 1-10 seconds
+		function virusDelay(): number {
+			return Math.floor(Math.random() * 9000) + 1000;
+		}
+
+		/* 	function stopTimer(socketId: string) {
 		console.log("socketId", socketId);
 
 		const playerClicked = socketId;
@@ -149,7 +176,7 @@ export const handleConnection = (
 		}
 	} */
 
-	/* 	socket.on("startTimer", () => {
+		/* 	socket.on("startTimer", () => {
 		if (!isGameRunning) {
 			isGameRunning = true;
 
@@ -163,30 +190,9 @@ export const handleConnection = (
 		}
 	}); */
 
-	// socket.on("updateTimer", () => {});
+		// socket.on("updateTimer", () => {});
 
-	function startRound(io: Server) {
-		const newVirusDelay = virusDelay();
-		const newVirusPosition = virusPosition();
-		console.log(
-			`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
-		);
-		io.emit("virusLogic", newVirusPosition, newVirusDelay);
-		virusActive = true; // Allow virus to be "hit" again
-		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
-		// thirtySecTimer(io);
-	}
-
-	function virusPosition(): number {
-		return Math.floor(Math.random() * 25);
-	}
-
-	//Random virus delay 1-10 seconds
-	function virusDelay(): number {
-		return Math.floor(Math.random() * 9000) + 1000;
-	}
-
-	/* 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
+		/* 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
 		if (timeoutTimer) clearTimeout(timeoutTimer);
 		timeoutTimer = setTimeout(() => {
 			console.log("No click within 30 sec.🐌");
@@ -194,102 +200,110 @@ export const handleConnection = (
 		}, remainingTime);
 	} */
 
-	// function virusSetup(io: Server) {
-	// 	//setTimeout(() => {
-	// 		virusStartTime = Date.now();
-	// 		virusActive = true;
-	// 		console.log(`👾Skickar ny virusposition:från virusSetup i socket_controller`)
-	// 		//virusPosition();
-	// 		io.emit("virusLogic", virusPosition(), virusDelay());
-	// 	//}, virusDelay());
-	// }
+		// function virusSetup(io: Server) {
+		// 	//setTimeout(() => {
+		// 		virusStartTime = Date.now();
+		// 		virusActive = true;
+		// 		console.log(`👾Skickar ny virusposition:från virusSetup i socket_controller`)
+		// 		//virusPosition();
+		// 		io.emit("virusLogic", virusPosition(), virusDelay());
+		// 	//}, virusDelay());
+		// }
 
-	// Handling a virus hit from a client
-	socket.on("virusClick", ({ elapsedTime }) => {
-		const playerId: string = socket.id;
-		console.log("elapsedTime:", elapsedTime);
+		// Handling a virus hit from a client
+		socket.on("virusClick", ({ elapsedTime }) => {
+			const playerId: string = socket.id;
+			console.log("elapsedTime:", elapsedTime);
 
-		// socket.emit("reactionTimeForBoth", elapsedTime);
+			// socket.emit("reactionTimeForBoth", elapsedTime);
 
-		if (!reactionTimes[playerId]) {
-			reactionTimes[playerId] = [];
-		}
-		(reactionTimes[playerId] as number[]).push(elapsedTime);
-		console.log("reactionTimes", reactionTimes);
-
-		const playerIds = Object.keys(reactionTimes);
-		const allPlayersHaveEnoughEntries = playerIds.every(
-			(id) => reactionTimes[id].length >= 10
-		);
-
-		if (allPlayersHaveEnoughEntries) {
-			for (const playerId of playerIds) {
-				// Call highscoreCalc for each player
-				highscoreCalc(playerId, reactionTimes);
+			if (!reactionTimes[playerId]) {
+				reactionTimes[playerId] = [];
 			}
-		} else {
-			console.log(
-				"Inte tillräckligt med reaktionstider för att beräkna highscore."
+			(reactionTimes[playerId] as number[]).push(elapsedTime);
+			console.log("reactionTimes", reactionTimes);
+
+			const playerIds = Object.keys(reactionTimes);
+			const allPlayersHaveEnoughEntries = playerIds.every(
+				(id) => reactionTimes[id].length >= 10
 			);
-		}
-		clicksInRound++;
-		if (clicksInRound === 2) {
-			clicksInRound = 0;
-			currentRound++;
-			console.log("currentRound", currentRound);
-			if (currentRound >= maxRounds) {
-				console.log("Triggering Game Over");
-				currentRound = 0;
-				io.emit("gameOver");
+
+			if (allPlayersHaveEnoughEntries) {
+				for (const playerId of playerIds) {
+					// Call highscoreCalc for each player
+					highscoreCalc(playerId, reactionTimes);
+				}
 			} else {
-				// Proceed to the next round
-				console.log("📌New round from virusClick in socket controller");
-				// setTimeout(() => {
-				startRound(io);
-				// }, 1000);
+				console.log(
+					"Inte tillräckligt med reaktionstider för att beräkna highscore."
+				);
 			}
-		}
-	});
-
-	const highscoreCalc = (playerId: string, reactionTimes: ReactionTimes) => {
-		const averageHighscores: AverageHighscores = {};
-
-		const playerTimes = reactionTimes[playerId];
-
-		const averageTime =
-			playerTimes.reduce((sum, time) => sum + time, 0) /
-			playerTimes.length;
-
-		averageHighscores[playerId] = averageTime;
-
-		console.log("averageHighscores", averageHighscores);
-
-		saveHighscoresToDatabase(playerId, averageHighscores);
-	};
-
-	// Funktion för att spara highscores i databasen
-	const saveHighscoresToDatabase = async (
-		playerId: string,
-		highscore: AverageHighscores
-	) => {
-		for (const [playerId, playerHighscore] of Object.entries(highscore)) {
-			const player = await getPlayer(playerId);
-
-			if (player) {
-				const username = player.username;
-				console.log("username ", username);
-				console.log("playerHighscore ", playerHighscore);
-
-				if (username) {
-					await createHighscore(username, playerHighscore);
+			clicksInRound++;
+			if (clicksInRound === 2) {
+				clicksInRound = 0;
+				currentRound++;
+				console.log("currentRound", currentRound);
+				if (currentRound >= maxRounds) {
+					console.log("Triggering Game Over");
+					currentRound = 0;
+					io.emit("gameOver");
+				} else {
+					// Proceed to the next round
+					console.log(
+						"📌New round from virusClick in socket controller"
+					);
+					// setTimeout(() => {
+					startRound(io);
+					// }, 1000);
 				}
 			}
-		}
-	};
+		});
 
-	socket.on("highscore", async (callback) => {
-		const allHighscores = await getAllHighscores();
-		callback(allHighscores);
+		const highscoreCalc = (
+			playerId: string,
+			reactionTimes: ReactionTimes
+		) => {
+			const averageHighscores: AverageHighscores = {};
+
+			const playerTimes = reactionTimes[playerId];
+
+			const averageTime =
+				playerTimes.reduce((sum, time) => sum + time, 0) /
+				playerTimes.length;
+
+			averageHighscores[playerId] = averageTime;
+
+			console.log("averageHighscores", averageHighscores);
+
+			saveHighscoresToDatabase(playerId, averageHighscores);
+		};
+
+		// Funktion för att spara highscores i databasen
+		const saveHighscoresToDatabase = async (
+			playerId: string,
+			highscore: AverageHighscores
+		) => {
+			for (const [playerId, playerHighscore] of Object.entries(
+				highscore
+			)) {
+				const player = await getPlayer(playerId);
+
+				if (player) {
+					const username = player.username;
+					console.log("username ", username);
+					console.log("playerHighscore ", playerHighscore);
+
+					if (username) {
+						await createHighscore(username, playerHighscore);
+					}
+				}
+			}
+		};
+
+		socket.on("highscore", async (callback) => {
+			const allHighscores = await getAllHighscores();
+			callback(allHighscores);
+		});
 	});
 
 	// handler for disconnecting
