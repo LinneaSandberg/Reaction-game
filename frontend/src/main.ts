@@ -48,6 +48,9 @@ const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector(
   "#player2Timer"
 ) as HTMLParagraphElement;
+const highscoreChartEl = document.querySelector(
+  ".highscoreChart"
+) as HTMLUListElement;
 
 // button for reset
 const startNewGameFormEl = document.querySelector(
@@ -237,26 +240,14 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-// listen for stopTimer
-/* socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  const seconds = Math.floor(elapsedTime / 1000)
-    .toString()
-    .padStart(2, "0");
-  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-  // if (player1pEl && playerId === socket.id) {
-  if (playerId === socket.id) {
-    player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  } else if (playerId !== socket.id) {
-    player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  }
-}); */
-
-// Listen for updateTimer
-// socket.on("startTimer", (elapsedTime) => {
-//   // Update UI with elapsed time
-//   updateTimer(elapsedTime);
-// });
+socket.emit("highscore", (highscores) => {
+  highscoreChartEl.innerHTML = highscores
+    .slice(0, 5)
+    .map(
+      (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
+    )
+    .join("");
+});
 
 socket.on("playerLeft", (username) => {
   console.log("A user has left the game: ", username);
@@ -264,32 +255,6 @@ socket.on("playerLeft", (username) => {
   // Send that information to the other player in the room
   showDisconnect();
 });
-
-// socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
-//   console.log(`Player ${playerId} clicked on the virus!`);
-
-//   if (timerInterval) {
-//     clearInterval(timerInterval);
-//     timerInterval = null;
-//   }
-
-//   if (playerId === socket.id) {
-//     reactionTime = playerReactionTime;
-
-//     // Uppdatera UI med reaktionstiden för spelare 1
-//     if (player1ReactiontimeEl) {
-//       player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
-//     }
-//   } else {
-//     // Uppdatera UI med reaktionstiden för spelare 2
-//     if (player2ReactiontimeEl) {
-//       player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
-//     }
-
-//     // Update UI with player's reaction time
-//     // Implement this function based on your UI structure
-//   }
-// });
 
 if (startNewGameFormEl) {
   startNewGameFormEl.addEventListener("submit", (e) => {

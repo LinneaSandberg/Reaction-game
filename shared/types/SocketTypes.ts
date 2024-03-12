@@ -1,4 +1,4 @@
-import { Game, Player, Room, StartGame, VirusDelay } from "./Models";
+import { Game, Highscore, Player, Room, StartGame, VirusDelay } from "./Models";
 export {};
 
 // Events emitted by the server to the client
@@ -22,6 +22,7 @@ export interface ClientToServerEvents {
   playerJoinRequest: (
     username: string,
     roomId: string) => void;
+  highscore: (callback: (highscores: Highscore[]) => void) => void;
   virusClick: (event: stopTimerEvent) => void;
 }
 
@@ -59,4 +60,18 @@ export interface UserSocketMap {
 
 export interface PlayerLeftEvent {
   playerId: string;
+}
+
+export interface ReactionTimes {
+  [playerId: string]: number[];
+}
+
+export interface AverageHighscores {
+  [playerId: string]: number;
+}
+
+export interface Highscores {
+  id: string;
+  username: string;
+  highscore: number;
 }

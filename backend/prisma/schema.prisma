@@ -24,6 +24,12 @@ model Game {
   // HighScore   HighScore[]
 }
 
+model HighScore {
+  id  String    @id @default(auto()) @map("_id") @db.ObjectId
+  username String
+  highscore Int
+}
+
 // model HighScore {
 //   id       String @id @map("_id")
 //   score    Int
