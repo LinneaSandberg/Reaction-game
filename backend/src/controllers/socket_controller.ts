@@ -7,7 +7,6 @@ import {
 	ClientToServerEvents,
 	ServerToClientEvents,
 	WaitingPlayers,
-	UserSocketMap,
 	ReactionTimes,
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
@@ -25,8 +24,6 @@ const debug = Debug("backend:socket_controller");
 const waitingPlayers: WaitingPlayers[] = [];
 
 // variabler for timer and virus
-let player1ClickTime: number | null;
-let player2ClickTime: number | null;
 const reactionTimes: ReactionTimes = {};
 
 // Initialize variables for timer state
@@ -35,9 +32,6 @@ let startTime: number;
 let intervalId: NodeJS.Timeout;
 let timeoutTimer: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
-
-// Object to store relation between user and socketId
-let userSocketMap: UserSocketMap = {};
 
 //Game variables
 //let currentRound = 0;
@@ -54,7 +48,6 @@ export const handleConnection = (
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
 	socket.on("playerJoinRequest", async (username, gameId) => {
-		// userSocketMap[username] = socket.id;
 
 		const player = await prisma.player.create({
 			data: {

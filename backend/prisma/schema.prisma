@@ -10,7 +10,7 @@ datasource db {
 model Player {
   id       String  @id @map("_id")
   username String  @unique
-  gameId   String? @db.ObjectId
+  gameId   String? @map("game_id") @db.ObjectId
   game     Game?   @relation(fields: [gameId], references: [id])
   // HighScore HighScore
 }
@@ -25,8 +25,8 @@ model Game {
 }
 
 model HighScore {
-  id  String    @id @default(auto()) @map("_id") @db.ObjectId
-  username String
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  username  String
   highscore Int
 }
 
