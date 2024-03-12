@@ -102,9 +102,9 @@ export const handleConnection = (
 					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				initiateCountdown(io);
-				startRound(io);
 			});
+			initiateCountdown(io);
+			startRound(io);
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
@@ -154,7 +154,7 @@ export const handleConnection = (
 		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
 		console.log(
-			`🐉Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
+			`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
 		);
 		io.emit("virusLogic", newVirusPosition, newVirusDelay);
 		virusActive = true; // Allow virus to be "hit" again
@@ -204,13 +204,14 @@ export const handleConnection = (
 			console.log("currentRound", currentRound);
 			if (currentRound >= maxRounds) {
 				console.log("Triggering Game Over");
+				currentRound = 0;
 				io.emit("gameOver");
 			} else {
 				// Proceed to the next round
 				console.log("📌New round from virusClick in socket controller");
 				setTimeout(() => {
 					startRound(io);
-				}, 5000);
+				}, 4000);
 			}
 		}
 	});
