@@ -47,12 +47,26 @@ export const handleConnection = (
 ) => {
 	socket.on("playerJoinRequest", async (username, gameId) => {
 
-		const player = await prisma.player.create({
-			data: {
+
+		const existingPlayer = await prisma.player.findUnique({
+			where: {
 				id: socket.id,
-				username,
 			},
 		});
+
+		let player;
+
+		if (existingPlayer) {
+			player = existingPlayer;
+
+		} else {
+			player = await prisma.player.create({
+				data: {
+					id: socket.id,
+					username,
+				},
+			});
+		}
 
 		waitingPlayers.push({
 			players: {
@@ -155,7 +169,7 @@ export const handleConnection = (
 
 
 		// Handling a virus hit from a client
-		socket.on("virusClick", ({ elapsedTime }) => {
+		socket.on("virusClick", async ({ elapsedTime }) => {
 			const playerId: string = socket.id;
 			const gameId = socketToGameMap[socket.id];
 			if (!gameId) {
