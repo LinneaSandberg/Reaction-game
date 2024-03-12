@@ -125,18 +125,17 @@ export const handleConnection = (
 					"After `Playersinroom` players in room: ",
 					game.players
 				);
-				// Join room `roomId`
-				socket.join(roomId);
+
 			});
 			initiateCountdown(io);
-			startRound(io);
+			startRound(io, roomId);
 		} else {
 			io.to(roomId).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
 
-		function startRound(io: Server) {
+		function startRound(io: Server, roomId: string) {
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
 			console.log(
@@ -258,7 +257,7 @@ export const handleConnection = (
 						"📌New round from virusClick in socket controller"
 					);
 					// setTimeout(() => {
-					startRound(io);
+					startRound(io, roomId);
 					// }, 1000);
 				}
 			}
