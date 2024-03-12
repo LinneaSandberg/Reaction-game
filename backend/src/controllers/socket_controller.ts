@@ -12,7 +12,7 @@ import {
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, findPlayer, getPlayer } from "../services/PlayerService";
+import { deletePlayer, findPlayer, getPlayer, getRoomId } from "../services/PlayerService";
 import {
 	createHighscore,
 	getAllHighscores,
@@ -50,7 +50,7 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username, gameId) => {
+	socket.on("playerJoinRequest", async (username, roomId) => {
 		// userSocketMap[username] = socket.id;
 
 		const player = await prisma.player.create({
@@ -79,9 +79,6 @@ export const handleConnection = (
 							id: p.players.playerId,
 						})),
 					},
-				},
-				include: {
-					players: true,
 				},
 			});
 			
@@ -119,18 +116,18 @@ export const handleConnection = (
 					gameId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				console.log("After `Playersinroom` gameId: ", gameId);
+				console.log("After `Playersinroom` gameId: ", playersInRoom, gameId);
 				console.log("After `Playersinroom` players in room: ", game.id);
 			});
 			initiateCountdown(io);
-			startRound(io);
+			startRound(io, gameId);
 		} else {
-			io.to(gameId).emit("waitingForPlayer", {
+			io.to(roomId).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
 
-		function startRound(io: Server) {
+		async function startRound(io: Server, gameId: string) {
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
 			console.log(
@@ -143,6 +140,8 @@ export const handleConnection = (
 			virusActive = true; // Allow virus to be "hit" again
 			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 			// thirtySecTimer(io);
+
+			return gameId;
 		}
 
 		function virusPosition(): number {
@@ -155,10 +154,10 @@ export const handleConnection = (
 		}
 
 		// Handling a virus hit from a client
-		socket.on("virusClick", ({ elapsedTime }) => {
-			const playerId: string = socket.id;
+		socket.on("virusClick", async (gameId, { playerId, elapsedTime }) => {
+			// const playerId: string = socket.id;
 			console.log("elapsedTime:", elapsedTime);
-
+			
 			// socket.emit("reactionTimeForBoth", elapsedTime);
 
 			if (!reactionTimes[playerId]) {
@@ -182,6 +181,9 @@ export const handleConnection = (
 					"Inte tillräckligt med reaktionstider för att beräkna highscore."
 				);
 			}
+
+			console.log("gameId in virusClick", gameId);
+
 			clicksInRound++;
 			if (clicksInRound === 2) {
 				clicksInRound = 0;
@@ -190,14 +192,14 @@ export const handleConnection = (
 				if (currentRound >= maxRounds) {
 					console.log("Triggering Game Over");
 					currentRound = 0;
-					io.emit("gameOver");
+					io.to(gameId).emit("gameOver");
 				} else {
 					// Proceed to the next round
 					console.log(
 						"📌New round from virusClick in socket controller"
 					);
 					// setTimeout(() => {
-					startRound(io);
+					startRound(io, gameId);
 					// }, 1000);
 				}
 			}
