@@ -47,6 +47,9 @@ const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector(
   "#player2Timer"
 ) as HTMLParagraphElement;
+const highscoreChartEl = document.querySelector(
+  ".highscoreChart"
+) as HTMLUListElement;
 
 // button for reset
 const startNewGameFormEl = document.querySelector(
@@ -228,6 +231,15 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
+socket.emit("highscore", (highscores) => {
+  highscoreChartEl.innerHTML = highscores
+    .slice(0, 5)
+    .map(
+      (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
+    )
+    .join("");
+});
+
 // listen for stopTimer
 /* socket.on("stopTimer", ({ playerId, elapsedTime }) => {
   const seconds = Math.floor(elapsedTime / 1000)
@@ -327,7 +339,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
     console.log(
       "Room created: ",
-      event.gameId,
+      event.roomId,
       "With players: ",
       event.players
     );

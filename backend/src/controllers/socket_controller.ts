@@ -8,9 +8,15 @@ import {
 	ServerToClientEvents,
 	WaitingPlayers,
 	UserSocketMap,
+	ReactionTimes,
+	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
 import { deletePlayer, findPlayer, getPlayer } from "../services/PlayerService";
+import {
+	createHighscore,
+	getAllHighscores,
+} from "../services/HighscoreService";
 
 // Create a new debug instance
 const debug = Debug("backend:socket_controller");
@@ -21,6 +27,7 @@ const waitingPlayers: WaitingPlayers[] = [];
 // variabler for timer and virus
 let player1ClickTime: number | null;
 let player2ClickTime: number | null;
+const reactionTimes: ReactionTimes = {};
 
 // Initialize variables for timer state
 let isGameRunning = false;
@@ -96,16 +103,19 @@ export const handleConnection = (
 				}, 1000);
 			}
 
-			const gameId = game.id;
+			const roomId = game.id;
 			playersInRoom.forEach((player) => {
 				io.to(player.socketId).emit("roomCreated", {
-					gameId,
+					roomId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				console.log("After `Playersinroom` roomId: ", gameId);
-				console.log("After `Playersinroom` players in room: ", game.players);
+				console.log("After `Playersinroom` roomId: ", roomId);
+				console.log(
+					"After `Playersinroom` players in room: ",
+					game.players
+				);
 				// Join room `roomId`
-				socket.join(gameId);
+				socket.join(roomId);
 			});
 			initiateCountdown(io);
 			startRound(io);
@@ -195,12 +205,30 @@ export const handleConnection = (
 
 	// Handling a virus hit from a client
 	socket.on("virusClick", (elapsedTime) => {
-		// const currentPlayer = socket.id;
-		// const opponent = waitingPlayers.find(
-		// 	(player) => player.socketId !== currentPlayer
-		// );
-		// console.log("socketId:", socketId)
+		const playerId: string = socket.id;
 		console.log("elapsedTime:", elapsedTime);
+
+		if (!reactionTimes[playerId]) {
+			reactionTimes[playerId] = [];
+		}
+		(reactionTimes[playerId] as number[]).push(elapsedTime);
+		console.log("reactionTimes", reactionTimes);
+
+		const playerIds = Object.keys(reactionTimes);
+		const allPlayersHaveEnoughEntries = playerIds.every(
+			(id) => reactionTimes[id].length >= 10
+		);
+
+		if (allPlayersHaveEnoughEntries) {
+			for (const playerId of playerIds) {
+				// Call highscoreCalc for each player
+				highscoreCalc(playerId, reactionTimes);
+			}
+		} else {
+			console.log(
+				"Inte tillräckligt med reaktionstider för att beräkna highscore."
+			);
+		}
 		clicksInRound++;
 		if (clicksInRound === 2) {
 			clicksInRound = 0;
@@ -215,14 +243,55 @@ export const handleConnection = (
 				console.log("📌New round from virusClick in socket controller");
 				setTimeout(() => {
 					startRound(io);
-				}, 4000);
+				}, 1000);
 			}
 		}
 	});
+
+	const highscoreCalc = (playerId: string, reactionTimes: ReactionTimes) => {
+		const averageHighscores: AverageHighscores = {};
+
+		const playerTimes = reactionTimes[playerId];
+
+		const averageTime =
+			playerTimes.reduce((sum, time) => sum + time, 0) /
+			playerTimes.length;
+
+		averageHighscores[playerId] = averageTime;
+
+		console.log("averageHighscores", averageHighscores);
+
+		saveHighscoresToDatabase(playerId, averageHighscores);
+	};
+
+	// Funktion för att spara highscores i databasen
+	const saveHighscoresToDatabase = async (
+		playerId: string,
+		highscore: AverageHighscores
+	) => {
+		for (const [playerId, playerHighscore] of Object.entries(highscore)) {
+			const player = await getPlayer(playerId);
+
+			if (player) {
+				const username = player.username;
+				console.log("username ", username);
+				console.log("playerHighscore ", playerHighscore);
+
+				if (username) {
+					await createHighscore(username, playerHighscore);
+				}
+			}
+		}
+	};
+
+	socket.on("highscore", async (callback) => {
+		const allHighscores = await getAllHighscores();
+		callback(allHighscores);
+	});
+
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
-		
 
 		// const index = waitingPlayers.findIndex(
 		// 	(player) => player.socketId === socket.id
@@ -258,31 +327,28 @@ export const handleConnection = (
 			});
 			console.log("updateplayer: ", updatePlayer);
 
-		const playerLeftInRoom = await findPlayer(player.gameId);
-		console.log("PlayerleftInroom: ", playerLeftInRoom);
-		console.log("playerLeftInRoom.players: ", playerLeftInRoom?.players[0].gameId);
-
+			const playerLeftInRoom = await findPlayer(player.gameId);
+			console.log("PlayerleftInroom: ", playerLeftInRoom);
+			// console.log(
+			// 	"playerLeftInRoom.players: ",
+			// 	playerLeftInRoom?.players[0].gameId
+			// );
 
 			// Remove player after he plays
-		const deletedPlayer = await deletePlayer(socket.id);
-		console.log("DeletePlayer: ", deletedPlayer);
+			const deletedPlayer = await deletePlayer(socket.id);
+			console.log("DeletePlayer: ", deletedPlayer);
 
+			// const playerGameId = playerLeftInRoom?.players[0].gameId;
+			// const playerLeftout = player.id;
+			// console.log("PlayerleftOut: ", playerLeftout);
 
-		const playerGameId = playerLeftInRoom?.players[0].gameId;
-		// const playerLeftout = player.id;
-		// console.log("PlayerleftOut: ", playerLeftout);
+			// Broadcast a notice to the room that the user has left
 
-		// Broadcast a notice to the room that the user has left
-	
-		if (playerGameId) {
 			console.log("socket.id på den som är deletead: ", socket.id);
 			console.log("player.gameId", player.gameId);
-			console.log("playerGameId", playerGameId);
+			// console.log("playerGameId", playerGameId);
 
-			io.to(playerGameId).emit("playerLeft", player.username);
+			io.to(player.gameId).emit("playerLeft", player.username);
 		}
-
-		}
-
 	});
 };

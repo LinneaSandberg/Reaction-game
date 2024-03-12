@@ -1,25 +1,29 @@
-export {}
-
+export {};
 
 export interface Room {
-    roomId: string;
-    players: Player[];
+  roomId: string;
+  players: Player[];
 }
 
 export interface Player {
-    playerId: string;
-    username: string;
+  playerId: string;
+  username: string;
+}
+
+export interface Highscore {
+  username: string;
+  highscore: number;
 }
 
 export interface VirusPosition {
-    position: number;
+  position: number;
 }
 
 export interface VirusDelay {
-    delay: number;
+  delay: number;
 }
 
 export type StartGame = {
-    virusPosition: number;
-    virusDelay: number;
-  };
+  virusPosition: number;
+  virusDelay: number;
+};
