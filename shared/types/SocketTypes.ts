@@ -1,4 +1,4 @@
-import { Player, Room, StartGame, VirusDelay } from "./Models";
+import { Game, Player, Room, StartGame, VirusDelay } from "./Models";
 export {};
 
 // Events emitted by the server to the client
@@ -21,13 +21,19 @@ export interface ClientToServerEvents {
   roomForPlayers: (callback: (rooms: Room[]) => void) => void;
   playerJoinRequest: (
     username: string,
+    roomId: string,
     callback: (response: PlayerJoinResponse) => void
   ) => void;
   virusClick: (event: stopTimerEvent) => void;
 }
 
+export interface GameInfo extends Game {
+  players: Player[];
+}
+
 export interface PlayerJoinResponse {
   success: boolean;
+  game: GameInfo | null;
 }
 
 export interface RoomCreatedEvent {

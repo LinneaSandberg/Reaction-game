@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
+  PlayerJoinResponse,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
@@ -143,6 +144,15 @@ const stopTimer = (playerNumber: string) => {
     
   }
 };
+
+const handlePlayerJoinRequest = (response: PlayerJoinResponse) => {
+  console.log("Join was successfull", response);
+
+  if (!response.success || !response.game) {
+		alert("Could not join room (for some reason)");
+		return;
+	}
+}
 
 
 
@@ -321,13 +331,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, (response) => {
-    if (response.success) {
-      console.log("Player joined successfully!");
-    } else {
-      console.error("Player join failed!");
-    }
-  });
+  socket.emit("playerJoinRequest", username, roomId,  handlePlayerJoinRequest);
   console.log("Emitted 'playerJoinRequest' event to server", username);
 
   // function to display the waiting-lobby

@@ -43,7 +43,8 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username: string) => {
+	socket.on("playerJoinRequest", async (username, roomId, callback) => {
+		debug("Player %s wants to join the game %s", username, roomId);
 		userSocketMap[username] = socket.id;
 
 		const player = await prisma.player.create({
