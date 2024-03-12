@@ -1,4 +1,4 @@
-import { Game, Highscore, Player, Room, StartGame, VirusDelay } from "./Models";
+import { Game, Highscore, Player, Room, VirusDelay } from "./Models";
 export {};
 
 // Events emitted by the server to the client
