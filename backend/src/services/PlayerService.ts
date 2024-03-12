@@ -18,3 +18,15 @@ export const deletePlayer = (playerId: string) => {
         },
 })
 };
+
+export const findPlayer = (gameId: string) => {
+    return prisma.game.findUnique({
+        where: {
+
+            id: gameId,
+        },
+        include: {
+            players: true,
+        },
+    });
+}

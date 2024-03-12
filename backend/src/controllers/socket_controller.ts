@@ -10,7 +10,7 @@ import {
 	UserSocketMap,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, getPlayer } from "../services/PlayerService";
+import { deletePlayer, findPlayer, getPlayer } from "../services/PlayerService";
 
 // Create a new debug instance
 const debug = Debug("backend:socket_controller");
@@ -65,7 +65,7 @@ export const handleConnection = (
 			const playersInRoom = waitingPlayers.splice(0, 2);
 
 			// Create a Game in MongoDB and retrive the room/game ID
-			const room = await prisma.game.create({
+			const game = await prisma.game.create({
 				data: {
 					players: {
 						connect: playersInRoom.map((p) => ({
@@ -96,17 +96,20 @@ export const handleConnection = (
 				}, 1000);
 			}
 
-			const roomId = room.id;
+			const gameId = game.id;
 			playersInRoom.forEach((player) => {
 				io.to(player.socketId).emit("roomCreated", {
-					roomId,
+					gameId,
 					players: playersInRoom.map((p) => p.players),
 				});
+				console.log("After `Playersinroom` roomId: ", gameId);
+				console.log("After `Playersinroom` players in room: ", game.players);
 				// Join room `roomId`
-				socket.join(roomId);
-				initiateCountdown(io);
-				startRound(io);
+				socket.join(gameId);
+				console.log("After `Socket.join`: ", gameId);
 			});
+			initiateCountdown(io);
+			startRound(io);
 		} else {
 			io.to(socket.id).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
@@ -193,10 +196,10 @@ export const handleConnection = (
 
 	// Handling a virus hit from a client
 	socket.on("virusClick", (elapsedTime) => {
-		const currentPlayer = socket.id;
-		const opponent = waitingPlayers.find(
-			(player) => player.socketId !== currentPlayer
-		);
+		// const currentPlayer = socket.id;
+		// const opponent = waitingPlayers.find(
+		// 	(player) => player.socketId !== currentPlayer
+		// );
 		// console.log("socketId:", socketId)
 		console.log("elapsedTime:", elapsedTime);
 		clicksInRound++;
@@ -219,6 +222,7 @@ export const handleConnection = (
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
+		
 
 		// const index = waitingPlayers.findIndex(
 		// 	(player) => player.socketId === socket.id
@@ -229,6 +233,7 @@ export const handleConnection = (
 
 		// Find player to know what room that player was in
 		const player = await getPlayer(socket.id);
+		console.log("Get players to now the room: ", player);
 
 		// If player does not exist, the return
 		if (!player) {
@@ -252,19 +257,32 @@ export const handleConnection = (
 				},
 			});
 			console.log("updateplayer: ", updatePlayer);
-		}
 
-		// Remove player after he plays
-		await deletePlayer(socket.id);
+		const playerLeftInRoom = await findPlayer(player.gameId);
+		console.log("PlayerleftInroom: ", playerLeftInRoom);
+		console.log("playerLeftInRoom.players: ", playerLeftInRoom?.players[0].gameId);
 
+
+			// Remove player after he plays
+		const deletedPlayer = await deletePlayer(socket.id);
+		console.log("DeletePlayer: ", deletedPlayer);
+
+
+		const playerGameId = playerLeftInRoom?.players[0].gameId;
 		// const playerLeftout = player.id;
 		// console.log("PlayerleftOut: ", playerLeftout);
 
 		// Broadcast a notice to the room that the user has left
-		if (player.gameId) {
-			console.log("socket.id: ", socket.id);
+	
+		if (playerGameId) {
+			console.log("socket.id på den som är deletead: ", socket.id);
 			console.log("player.gameId", player.gameId);
-			io.to(player.gameId).emit("playerLeft", player.username);
+			console.log("playerGameId", playerGameId);
+
+			io.to(playerGameId).emit("playerLeft", player.username);
 		}
+
+		}
+
 	});
 };

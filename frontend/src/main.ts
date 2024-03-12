@@ -75,7 +75,7 @@ player2TimerEl.innerText = `00:000`;
 let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer1: number;
-let startTimePlayer2: number;
+// let startTimePlayer2: number;
 let roomId: string;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
@@ -171,7 +171,7 @@ const showDisconnect = () => {
   displayEl.innerHTML = `
 	<h3 id="headerNoob">The other player was a noob!</h3>
   <p id="paraNoob">And left you hanging!</p>
-	<figure>
+	<figure id="figureNoob">
 	<iframe src="https://giphy.com/embed/2kcrRowOHeH9n1EBx6" width="480" height="480" frameBorder="0" class="giphy-embed" id="giphyNoob" allowFullScreen></iframe>
 	</figure>
   <form id="startNewGameForm">
@@ -193,23 +193,23 @@ const usernamesDisplay = (username: string, opponent: string) => {
 };
 
 // Update timer to start counting from 0
-const updateTimer = (elapsedTime: number) => {
-  const seconds = Math.floor((elapsedTime % 60000) / 1000);
-  const milliseconds = elapsedTime % 1000;
-  // console.log("elapsedTime", elapsedTime);
+// const updateTimer = (elapsedTime: number) => {
+//   const seconds = Math.floor((elapsedTime % 60000) / 1000);
+//   const milliseconds = elapsedTime % 1000;
+//   // console.log("elapsedTime", elapsedTime);
 
-  const formattedTime = `${String(seconds).padStart(2, "0")}:${String(
-    milliseconds
-  ).padStart(3, "0")}`;
+//   const formattedTime = `${String(seconds).padStart(2, "0")}:${String(
+//     milliseconds
+//   ).padStart(3, "0")}`;
 
-  if (player1TimerEl) {
-    player1TimerEl.innerText = `${formattedTime}`;
-  }
+//   if (player1TimerEl) {
+//     player1TimerEl.innerText = `${formattedTime}`;
+//   }
 
-  if (player2TimerEl) {
-    player2TimerEl.innerText = `${formattedTime}`;
-  }
-};
+//   if (player2TimerEl) {
+//     player2TimerEl.innerText = `${formattedTime}`;
+//   }
+// };
 
 // Listen for when connection is established
 socket.on("connect", () => {
@@ -244,10 +244,10 @@ socket.io.on("reconnect", () => {
 }); */
 
 // Listen for updateTimer
-socket.on("startTimer", (elapsedTime) => {
-  // Update UI with elapsed time
-  updateTimer(elapsedTime);
-});
+// socket.on("startTimer", (elapsedTime) => {
+//   // Update UI with elapsed time
+//   updateTimer(elapsedTime);
+// });
 
 socket.on("playerLeft", (username) => {
   console.log("A user has left the game: ", username);
@@ -327,7 +327,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
     console.log(
       "Room created: ",
-      event.roomId,
+      event.gameId,
       "With players: ",
       event.players
     );

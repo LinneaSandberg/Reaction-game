@@ -163,6 +163,12 @@ li {
   text-align: center;
 }
 
+#figureNoob {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #game-over-page {
   position: fixed;
   top: 30%;

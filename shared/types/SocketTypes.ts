@@ -7,13 +7,9 @@ export interface ServerToClientEvents {
   waitingForPlayer: (event: WaitingForPlayersEvent) => void;
   virusLogic: (position: number, delay: number) => void;
   virusDelay: (data: VirusDelay) => void;
-  startTimer: (elapsedTime: number) => void;
-  stopTimer: (event: stopTimerEvent) => void;
-  updateTimer: (elapsedTime: number) => void;
   playerLeft: (username: string) => void;
   countdown: (seconds: number) => void;
   startGame: () => void;
-  playerClicked: (event: PlayerClickedEvent) => void;
   virusHitConfirmed: () => void;
   gameOver: () => void;
 }
@@ -27,22 +23,14 @@ export interface ClientToServerEvents {
     callback: (response: PlayerJoinResponse) => void
   ) => void;
   virusClick: (elapsedTime: number) => void;
-  startTimer: () => void; // New event for starting the game
-  stopTimer: (username: string) => void; // New event for stopping the game
-  updateTimer: (elapsedTime: number, playerId: string) => void;
 }
-
-// export interface PlayerJoinRequest {
-//     username: string;
-//     highScore: number;
-// }
 
 export interface PlayerJoinResponse {
   success: boolean;
 }
 
 export interface RoomCreatedEvent {
-  roomId: string;
+  gameId: string;
   players: Player[];
 }
 
@@ -58,11 +46,6 @@ export interface WaitingPlayers {
 export interface stopTimerEvent {
   playerId: string;
   elapsedTime: number;
-}
-
-export interface PlayerClickedEvent {
-  playerId: string;
-  reactionTime: number;
 }
 
 export interface UserSocketMap {
