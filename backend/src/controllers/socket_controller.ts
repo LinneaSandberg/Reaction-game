@@ -102,9 +102,15 @@ export const handleConnection = (
 				}, 1000);
 			}
 
-			
+
 
 			playersInRoom.forEach((player) => {
+
+				const playerSocket = io.sockets.sockets.get(player.socketId);
+				if (playerSocket) {
+					playerSocket.join(roomId);
+				}
+
 				// Join room `roomId`
 				socket.join(roomId);
 				io.to(roomId).emit("roomCreated", {
@@ -135,11 +141,11 @@ export const handleConnection = (
 			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 			// thirtySecTimer(io);
 		}
-	
+
 		function virusPosition(): number {
 			return Math.floor(Math.random() * 25);
 		}
-	
+
 		//Random virus delay 1-10 seconds
 		function virusDelay(): number {
 			return Math.floor(Math.random() * 9000) + 1000;
@@ -235,7 +241,7 @@ export const handleConnection = (
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
-		
+
 
 		// const index = waitingPlayers.findIndex(
 		// 	(player) => player.socketId === socket.id
@@ -286,7 +292,7 @@ export const handleConnection = (
 		// console.log("PlayerleftOut: ", playerLeftout);
 
 		// Broadcast a notice to the room that the user has left
-	
+
 			console.log("socket.id på den som är deletead: ", socket.id);
 			console.log("player.gameId", player.gameId);
 
