@@ -139,6 +139,7 @@ export const handleConnection = (
 				gameStateMap[gameId].currentRound++;
 				gameStateMap[gameId].clicksInRound = 0; // Reset for new round
 				gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
+				console.log("📌New round from startRound in socket controller", gameStateMap[gameId].clicksInRound );
 			}
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
@@ -169,6 +170,9 @@ export const handleConnection = (
 		socket.on("virusClick", ({ elapsedTime }) => {
 			const playerId: string = socket.id;
 			const gameId = socketToGameMap[socket.id];
+			if (gameId) {
+				io.to(gameId).emit("opponentReactionTime",playerId,  elapsedTime);
+			  }
 			if (!gameId || !gameStateMap[gameId]) {
 				console.error("Game ID not found for socket:", socket.id);
 				return; // Handle this error as appropriate

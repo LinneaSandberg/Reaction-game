@@ -12,7 +12,7 @@ export interface ServerToClientEvents {
   startGame: () => void;
   virusHitConfirmed: () => void;
   gameOver: () => void;
-  reactionTimeForBoth: (elapsedTime: number) => void;
+  opponentReactionTime: (playerId: string, elapsedTime: number) => void;
 }
 
 // Events emitted by the client to the server

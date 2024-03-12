@@ -294,8 +294,13 @@ socket.on("startGame", () => {
   console.log("Game started!");
 });
 
-socket.on("reactionTimeForBoth", (elapsedTime: number) => {
-  console.log("Detta är elapsedTime från reactionTimeForBoth: ", elapsedTime);
+socket.on("opponentReactionTime", (playerId: string, elapsedTime: number) => {
+  if (playerId !== socket.id) {
+    const seconds = Math.floor(elapsedTime / 1000);
+    const milliseconds = elapsedTime % 1000;
+    player2TimerEl.innerText = `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
+  }
+  console.log("Detta är elapsedTime från Opponent: ", playerId, elapsedTime);
 })
 
 socket.on("virusLogic", (position, delay) => {
