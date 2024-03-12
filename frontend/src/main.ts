@@ -138,13 +138,14 @@ const stopTimer = (playerNumber: string) => {
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
     console.log("virusClick: elapsedTime", elapsedTime);
-    socket.emit("virusClick", { playerId: socket.id, elapsedTime: elapsedTime });
+    socket.emit("virusClick", {
+      playerId: socket.id,
+      elapsedTime: elapsedTime,
+    });
     // player2TimerEl.innerHTML = `${elapsedTime}`;
-
   } else {
     clearInterval(timerIntervalPlayer2);
     // player1TimerEl.innerHTML = `${secoundPlayerElaspsedTime}`;
-    
   }
 };
 
@@ -152,12 +153,10 @@ const handlePlayerJoinRequest = (response: PlayerJoinResponse) => {
   console.log("Join was successfull", response);
 
   if (!response.success || !response.game) {
-		alert("Could not join room (for some reason)");
-		return;
-	}
-}
-
-
+    alert("Could not join room (for some reason)");
+    return;
+  }
+};
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -251,6 +250,7 @@ socket.io.on("reconnect", () => {
 });
 
 socket.emit("highscore", (highscores) => {
+  console.log("highscores", highscores);
   highscoreChartEl.innerHTML = highscores
     .slice(0, 5)
     .map(
@@ -343,7 +343,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, roomId,  handlePlayerJoinRequest);
+  socket.emit("playerJoinRequest", username, roomId, handlePlayerJoinRequest);
   console.log("Emitted 'playerJoinRequest' event to server", username);
 
   // function to display the waiting-lobby
@@ -396,7 +396,7 @@ socket.on("startGame", () => {
 
 socket.on("reactionTimeForBoth", (elapsedTime: number) => {
   console.log("Detta är elapsedTime från reactionTimeForBoth: ", elapsedTime);
-})
+});
 
 socket.on("virusLogic", (position, delay) => {
   console.log(`in viruslogic 🐣New virus position: ${position}`);

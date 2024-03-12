@@ -143,7 +143,7 @@ export const handleConnection = (
 				`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
 			);
 			console.log("In startRound, player.gameId: ", roomId);
-			io.to(roomId).emit("virusLogic", newVirusPosition, newVirusDelay);
+			io.emit("virusLogic", newVirusPosition, newVirusDelay);
 			// io.emit("virusLogic", newVirusPosition, newVirusDelay);
 			virusActive = true; // Allow virus to be "hit" again
 			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
@@ -230,7 +230,7 @@ export const handleConnection = (
 
 			const playerIds = Object.keys(reactionTimes);
 			const allPlayersHaveEnoughEntries = playerIds.every(
-				(id) => reactionTimes[id].length >= 10
+				(id) => reactionTimes[id].length >= 3
 			);
 
 			if (allPlayersHaveEnoughEntries) {
@@ -304,11 +304,11 @@ export const handleConnection = (
 				}
 			}
 		};
+	});
 
-		socket.on("highscore", async (callback) => {
-			const allHighscores = await getAllHighscores();
-			callback(allHighscores);
-		});
+	socket.on("highscore", async (callback) => {
+		const allHighscores = await getAllHighscores();
+		callback(allHighscores);
 	});
 
 	// handler for disconnecting
