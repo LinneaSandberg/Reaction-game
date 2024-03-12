@@ -145,16 +145,6 @@ const stopTimer = (playerNumber: string) => {
   }
 };
 
-const handlePlayerJoinRequest = (response: PlayerJoinResponse) => {
-  console.log("Join was successfull", response);
-
-  if (!response.success || !response.game) {
-		alert("Could not join room (for some reason)");
-		return;
-	}
-}
-
-
 
 // Variables for timer and reationtime
 // let timerInterval: number | null;
@@ -331,8 +321,8 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, roomId,  handlePlayerJoinRequest);
-  console.log("Emitted 'playerJoinRequest' event to server", username);
+  socket.emit("playerJoinRequest", username, roomId);
+  console.log("Emitted 'playerJoinRequest' event to server", username, roomId);
 
   // function to display the waiting-lobby
   showWaitingRoom();
@@ -340,7 +330,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
     console.log(
       "Room created: ",
-      event.roomId,
+      event.gameId,
       "With players: ",
       event.players
     );

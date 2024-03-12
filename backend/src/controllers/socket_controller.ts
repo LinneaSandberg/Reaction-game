@@ -10,7 +10,7 @@ import {
 	UserSocketMap,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, findPlayer, getPlayer } from "../services/PlayerService";
+import { deletePlayer, findPlayer, getPlayer, getgame } from "../services/PlayerService";
 
 // Create a new debug instance
 const debug = Debug("backend:socket_controller");
@@ -43,8 +43,8 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username, roomId, callback) => {
-		userSocketMap[username] = socket.id;
+	socket.on("playerJoinRequest", async (username, gameId) => {
+		// userSocketMap[username] = socket.id;
 
 		const player = await prisma.player.create({
 			data: {
@@ -77,24 +77,24 @@ export const handleConnection = (
 					players: true,
 				},
 			});
-			const roomId = game.id;
-			console.log("roomId: ", roomId);
+			
+			let gameId = game.id;
+			console.log("gameId: ", gameId);
 
-			debug("Player %s wants to join the game %s", username, roomId);
-
+			debug("Player %s wants to join the game %s", username, gameId);
 
 			function initiateCountdown(
 				io: Server<ClientToServerEvents, ServerToClientEvents>
 			) {
 				let countdown = 3;
 				const countdownInterval = setInterval(() => {
-						io.to(roomId).emit("countdown", countdown);
+						io.to(gameId).emit("countdown", countdown);
 					countdown--;
 					if (countdown < -1) {
 						// Wait one interval after reaching 0 before clearing
 						clearInterval(countdownInterval);
 						setTimeout(() => {
-								io.to(roomId).emit("startGame");
+								io.to(gameId).emit("startGame");
 							// io.emit("startGame");
 							//io.emit("virusLogic", virusPosition(), virusDelay());
 						}, 100);
@@ -102,28 +102,26 @@ export const handleConnection = (
 				}, 1000);
 			}
 
-
-
 			playersInRoom.forEach((player) => {
 
 				const playerSocket = io.sockets.sockets.get(player.socketId);
 				if (playerSocket) {
-					playerSocket.join(roomId);
+					playerSocket.join(gameId);
 				}
 
-				// Join room `roomId`
-				socket.join(roomId);
-				io.to(roomId).emit("roomCreated", {
-					roomId,
+				// Join room `gameId`
+				// socket.join(gameId);
+				io.to(gameId).emit("roomCreated", {
+					gameId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				console.log("After `Playersinroom` roomId: ", roomId);
-				console.log("After `Playersinroom` players in room: ", game.players);
+				console.log("After `Playersinroom` gameId: ", gameId);
+				console.log("After `Playersinroom` players in room: ", game.id);
 			});
 			initiateCountdown(io);
 			startRound(io);
 		} else {
-			io.to(roomId).emit("waitingForPlayer", {
+			io.to(gameId).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
@@ -134,8 +132,9 @@ export const handleConnection = (
 			console.log(
 				`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
 			);
-				console.log("In startRound, player.gameId: ", roomId);
-				io.to(roomId).emit("virusLogic", newVirusPosition, newVirusDelay);
+
+			console.log("In startRound, player.gameId: ", gameId);
+			io.to(gameId).emit("virusLogic", newVirusPosition, newVirusDelay);
 			// io.emit("virusLogic", newVirusPosition, newVirusDelay);
 			virusActive = true; // Allow virus to be "hit" again
 			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
@@ -239,6 +238,7 @@ export const handleConnection = (
 	// 	//}, virusDelay());
 	// }
 	// handler for disconnecting
+	
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
 

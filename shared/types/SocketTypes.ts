@@ -21,9 +21,7 @@ export interface ClientToServerEvents {
   roomForPlayers: (callback: (rooms: Room[]) => void) => void;
   playerJoinRequest: (
     username: string,
-    roomId: string,
-    callback: (response: PlayerJoinResponse) => void
-  ) => void;
+    roomId: string) => void;
   virusClick: (event: stopTimerEvent) => void;
 }
 
@@ -37,7 +35,7 @@ export interface PlayerJoinResponse {
 }
 
 export interface RoomCreatedEvent {
-  roomId: string;
+  gameId: string;
   players: Player[];
 }
 
