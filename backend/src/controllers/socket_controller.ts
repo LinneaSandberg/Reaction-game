@@ -7,12 +7,11 @@ import {
 	ClientToServerEvents,
 	ServerToClientEvents,
 	WaitingPlayers,
-	UserSocketMap,
 	ReactionTimes,
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, findPlayer, getPlayer, getRoomId } from "../services/PlayerService";
+import { deletePlayer, findPlayer, getPlayer } from "../services/PlayerService";
 import {
 	createHighscore,
 	getAllHighscores,
@@ -25,8 +24,6 @@ const debug = Debug("backend:socket_controller");
 const waitingPlayers: WaitingPlayers[] = [];
 
 // variabler for timer and virus
-let player1ClickTime: number | null;
-let player2ClickTime: number | null;
 const reactionTimes: ReactionTimes = {};
 
 // Initialize variables for timer state
@@ -35,9 +32,6 @@ let startTime: number;
 let intervalId: NodeJS.Timeout;
 let timeoutTimer: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
-
-// Object to store relation between user and socketId
-let userSocketMap: UserSocketMap = {};
 
 //Game variables
 let currentRound = 0;
@@ -51,8 +45,7 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username, roomId) => {
-		// userSocketMap[username] = socket.id;
+	socket.on("playerJoinRequest", async (username, gameId) => {
 
 		const player = await prisma.player.create({
 			data: {
@@ -80,6 +73,9 @@ export const handleConnection = (
 							id: p.players.playerId,
 						})),
 					},
+				},
+				include: {
+					players: true,
 				},
 			});
 
@@ -121,13 +117,13 @@ export const handleConnection = (
 					gameId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				console.log("After `Playersinroom` gameId: ", playersInRoom, gameId);
+				console.log("After `Playersinroom` gameId: ", gameId);
 				console.log("After `Playersinroom` players in room: ", game.id);
 			});
 			initiateCountdown(io);
 			startRound(io, gameId);
 		} else {
-			io.to(roomId).emit("waitingForPlayer", {
+			io.to(gameId).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
@@ -145,8 +141,6 @@ export const handleConnection = (
 			virusActive = true; // Allow virus to be "hit" again
 			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
 			// thirtySecTimer(io);
-
-			return gameId;
 		}
 
 		function virusPosition(): number {
@@ -195,9 +189,6 @@ export const handleConnection = (
 					"Inte tillräckligt med reaktionstider för att beräkna highscore."
 				);
 			}
-
-			console.log("gameId in virusClick", gameId);
-
 			clicksInRound++;
 			if (clicksInRound === 2) {
 				clicksInRound = 0;
