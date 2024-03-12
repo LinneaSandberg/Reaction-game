@@ -7,7 +7,6 @@ import {
 	ClientToServerEvents,
 	ServerToClientEvents,
 	WaitingPlayers,
-	UserSocketMap,
 	ReactionTimes,
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
@@ -25,8 +24,6 @@ const debug = Debug("backend:socket_controller");
 const waitingPlayers: WaitingPlayers[] = [];
 
 // variabler for timer and virus
-let player1ClickTime: number | null;
-let player2ClickTime: number | null;
 const reactionTimes: ReactionTimes = {};
 
 // Initialize variables for timer state
@@ -36,29 +33,41 @@ let intervalId: NodeJS.Timeout;
 let timeoutTimer: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
 
-// Object to store relation between user and socketId
-let userSocketMap: UserSocketMap = {};
-
 //Game variables
-let currentRound = 0;
+//let currentRound = 0;
 const maxRounds = 10;
 let clicksInRound = 0;
 let virusActive = false;
 let virusStartTime: number;
+let socketToGameMap: Record<string, string> = {};
+let gameStateMap: Record<
+	string,
+	{ currentRound: number; clicksInRound: number; virusActive: boolean }
+> = {};
 
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username, roomId, callback) => {
-		userSocketMap[username] = socket.id;
-
-		const player = await prisma.player.create({
-			data: {
+	socket.on("playerJoinRequest", async (username, gameId) => {
+		const existingPlayer = await prisma.player.findUnique({
+			where: {
 				id: socket.id,
-				username,
 			},
 		});
+
+		let player;
+
+		if (existingPlayer) {
+			player = existingPlayer;
+		} else {
+			player = await prisma.player.create({
+				data: {
+					id: socket.id,
+					username,
+				},
+			});
+		}
 
 		waitingPlayers.push({
 			players: {
@@ -84,23 +93,22 @@ export const handleConnection = (
 					players: true,
 				},
 			});
-			const roomId = game.id;
-			console.log("roomId: ", roomId);
 
-			debug("Player %s wants to join the game %s", username, roomId);
+			let gameId = game.id;
+			console.log("gameId: ", gameId);
 
 			function initiateCountdown(
 				io: Server<ClientToServerEvents, ServerToClientEvents>
 			) {
 				let countdown = 3;
 				const countdownInterval = setInterval(() => {
-					io.to(roomId).emit("countdown", countdown);
+					io.to(gameId).emit("countdown", countdown);
 					countdown--;
 					if (countdown < -1) {
 						// Wait one interval after reaching 0 before clearing
 						clearInterval(countdownInterval);
 						setTimeout(() => {
-							io.to(roomId).emit("startGame");
+							io.to(gameId).emit("startGame");
 							// io.emit("startGame");
 							//io.emit("virusLogic", virusPosition(), virusDelay());
 						}, 100);
@@ -110,40 +118,51 @@ export const handleConnection = (
 
 			playersInRoom.forEach((player) => {
 				const playerSocket = io.sockets.sockets.get(player.socketId);
+				let gameId = game.id;
+
 				if (playerSocket) {
-					playerSocket.join(roomId);
+					playerSocket.join(gameId);
+					socketToGameMap[player.socketId] = gameId;
 				}
 
-				// Join room `roomId`
-				socket.join(roomId);
-				io.to(roomId).emit("roomCreated", {
-					roomId,
+				// Join room `gameId`
+				socket.join(gameId);
+				io.to(gameId).emit("roomCreated", {
+					gameId,
 					players: playersInRoom.map((p) => p.players),
 				});
-				console.log("After `Playersinroom` roomId: ", roomId);
-				console.log(
-					"After `Playersinroom` players in room: ",
-					game.players
-				);
-				// Join room `roomId`
-				socket.join(roomId);
+				console.log("After `Playersinroom` gameId: ", gameId);
+				console.log("After `Playersinroom` players in room: ", game.id);
 			});
 			initiateCountdown(io);
-			startRound(io);
+			startRound(io, gameId);
 		} else {
-			io.to(roomId).emit("waitingForPlayer", {
+			io.to(gameId).emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
 
-		function startRound(io: Server) {
+		function startRound(io: Server, gameId: string) {
+			if (!gameStateMap[gameId]) {
+				gameStateMap[gameId] = {
+					currentRound: 1,
+					clicksInRound: 0,
+					virusActive: false,
+				};
+			} else {
+				// Increment round or handle game continuation logic
+				gameStateMap[gameId].currentRound++;
+				gameStateMap[gameId].clicksInRound = 0; // Reset for new round
+				gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
+			}
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
 			console.log(
 				`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
 			);
-			console.log("In startRound, player.gameId: ", roomId);
-			io.emit("virusLogic", newVirusPosition, newVirusDelay);
+
+			console.log("In startRound, player.gameId: ", gameId);
+			io.to(gameId).emit("virusLogic", newVirusPosition, newVirusDelay);
 			// io.emit("virusLogic", newVirusPosition, newVirusDelay);
 			virusActive = true; // Allow virus to be "hit" again
 			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
@@ -159,65 +178,17 @@ export const handleConnection = (
 			return Math.floor(Math.random() * 9000) + 1000;
 		}
 
-		/* 	function stopTimer(socketId: string) {
-		console.log("socketId", socketId);
-
-		const playerClicked = socketId;
-		console.log("playerClicked", playerClicked);
-
-		if (isGameRunning) {
-			isGameRunning = false;
-
-			// Clear the interval and calculate elapsed time
-			clearInterval(intervalId);
-			const elapsedTime = Date.now() - startTime;
-			console.log("elapsedTime stopTimer function", elapsedTime);
-
-			// Emit a signal to all clients to stop their timers
-			io.emit("stopTimer", {
-				playerId: socketId,
-				elapsedTime,
-			});
-		}
-	} */
-
-		/* 	socket.on("startTimer", () => {
-		if (!isGameRunning) {
-			isGameRunning = true;
-
-			startTime = Date.now();
-
-			// Update timer every millisecond
-			intervalId = setInterval(() => {
-				const elapsedTime = Date.now() - startTime;
-				io.emit("updateTimer", elapsedTime);
-			}, 100);
-		}
-	}); */
-
-		// socket.on("updateTimer", () => {});
-
-		/* 	function thirtySecTimer(io: Server, remainingTime: number = 30000){
-		if (timeoutTimer) clearTimeout(timeoutTimer);
-		timeoutTimer = setTimeout(() => {
-			console.log("No click within 30 sec.🐌");
-			console.log(currentRound);
-		}, remainingTime);
-	} */
-
-		// function virusSetup(io: Server) {
-		// 	//setTimeout(() => {
-		// 		virusStartTime = Date.now();
-		// 		virusActive = true;
-		// 		console.log(`👾Skickar ny virusposition:från virusSetup i socket_controller`)
-		// 		//virusPosition();
-		// 		io.emit("virusLogic", virusPosition(), virusDelay());
-		// 	//}, virusDelay());
-		// }
-
 		// Handling a virus hit from a client
-		socket.on("virusClick", ({ elapsedTime }) => {
+		socket.on("virusClick", async ({ elapsedTime }) => {
 			const playerId: string = socket.id;
+			const gameId = socketToGameMap[socket.id];
+			if (!gameId || !gameStateMap[gameId]) {
+				console.error("Game ID not found for socket:", socket.id);
+				return; // Handle this error as appropriate
+			}
+			console.log(
+				`Game ID for virusClick: ${gameId}, Current Round: ${gameStateMap[gameId].currentRound}`
+			);
 			console.log("elapsedTime:", elapsedTime);
 
 			// socket.emit("reactionTimeForBoth", elapsedTime);
@@ -248,19 +219,19 @@ export const handleConnection = (
 			clicksInRound++;
 			if (clicksInRound === 2) {
 				clicksInRound = 0;
-				currentRound++;
-				console.log("currentRound", currentRound);
-				if (currentRound >= maxRounds) {
+				//currentRound++;
+				//console.log("currentRound", currentRound);
+				if (gameStateMap[gameId].currentRound >= maxRounds) {
 					console.log("Triggering Game Over");
-					currentRound = 0;
-					io.emit("gameOver");
+					gameStateMap[gameId].currentRound = 0;
+					io.to(gameId).emit("gameOver");
 				} else {
 					// Proceed to the next round
 					console.log(
 						"📌New round from virusClick in socket controller"
 					);
 					// setTimeout(() => {
-					startRound(io);
+					startRound(io, gameId);
 					// }, 1000);
 				}
 			}
@@ -355,6 +326,7 @@ export const handleConnection = (
 	});
 
 	// handler for disconnecting
+
 	socket.on("disconnect", async () => {
 		debug("A Player disconnected", socket.id);
 

@@ -1,8 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
-  PlayerJoinResponse,
-  Points,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
@@ -41,11 +39,11 @@ const gameOverPageEl = document.querySelector(
 ) as HTMLDivElement;
 
 // Result display
-const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+// const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
 const player1TimerEl = document.querySelector(
   "#player1Timer"
 ) as HTMLParagraphElement;
-const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+// const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player2TimerEl = document.querySelector(
   "#player2Timer"
 ) as HTMLParagraphElement;
@@ -63,24 +61,12 @@ console.log("Connecting to Socket.IO Server at:", SOCKET_HOST);
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
   io(SOCKET_HOST);
 
-// const player1ReactiontimeEl = document.querySelector(
-//   "#player1Reactiontime"
-// ) as HTMLParagraphElement;
-// const player2ReactiontimeEl = document.querySelector(
-//   "#player2Reactiontime"
-// ) as HTMLParagraphElement;
-
-// player1pEl.innerHTML = `00:000`;
-// player2pEl.innerHTML = `00:000`;
-// let startTime: number;
-
 player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
 
 let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer1: number;
-let startTimePlayer2: number;
 let roomId: string;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
@@ -98,7 +84,6 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
 
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer1);
-    // clearInterval(timerIntervalPlayer2);
 
     const reationtime = currentTime - startTime;
     console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
@@ -150,20 +135,6 @@ const stopTimer = (playerNumber: string) => {
   }
 };
 
-const handlePlayerJoinRequest = (response: PlayerJoinResponse) => {
-  console.log("Join was successfull", response);
-
-  if (!response.success || !response.game) {
-    alert("Could not join room (for some reason)");
-    return;
-  }
-};
-
-// Variables for timer and reationtime
-// let timerInterval: number | null;
-// let reactionTime: number | null;
-// let elapsedTime: number = 0;
-
 // Show waiting room
 const showWaitingRoom = () => {
   startPageEl.classList.add("hide");
@@ -214,25 +185,6 @@ const usernamesDisplay = (username: string, opponent: string) => {
   player2.innerText = opponent || "Opponent";
 };
 
-// Update timer to start counting from 0
-// const updateTimer = (elapsedTime: number) => {
-//   const seconds = Math.floor((elapsedTime % 60000) / 1000);
-//   const milliseconds = elapsedTime % 1000;
-//   // console.log("elapsedTime", elapsedTime);
-
-//   const formattedTime = `${String(seconds).padStart(2, "0")}:${String(
-//     milliseconds
-//   ).padStart(3, "0")}`;
-
-//   if (player1TimerEl) {
-//     player1TimerEl.innerText = `${formattedTime}`;
-//   }
-
-//   if (player2TimerEl) {
-//     player2TimerEl.innerText = `${formattedTime}`;
-//   }
-// };
-
 // Listen for when connection is established
 socket.on("connect", () => {
   console.log("💥 Connected to the server", SOCKET_HOST);
@@ -260,63 +212,12 @@ socket.emit("highscore", (highscores) => {
     .join("");
 });
 
-socket.emit("gameScore", (points) => {
-  console.log("points", points);
-});
-
-// listen for stopTimer
-/* socket.on("stopTimer", ({ playerId, elapsedTime }) => {
-  const seconds = Math.floor(elapsedTime / 1000)
-    .toString()
-    .padStart(2, "0");
-  const milliseconds = (elapsedTime % 1000).toString().padStart(3, "0");
-
-  // if (player1pEl && playerId === socket.id) {
-  if (playerId === socket.id) {
-    player1pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  } else if (playerId !== socket.id) {
-    player2pEl.innerHTML = `Reactiontime: ${seconds}:${milliseconds}`;
-  }
-}); */
-
-// Listen for updateTimer
-// socket.on("startTimer", (elapsedTime) => {
-//   // Update UI with elapsed time
-//   updateTimer(elapsedTime);
-// });
-
 socket.on("playerLeft", (username) => {
   console.log("A user has left the game: ", username);
 
   // Send that information to the other player in the room
   showDisconnect();
 });
-
-// socket.on("playerClicked", ({ playerId, reactionTime: playerReactionTime }) => {
-//   console.log(`Player ${playerId} clicked on the virus!`);
-
-//   if (timerInterval) {
-//     clearInterval(timerInterval);
-//     timerInterval = null;
-//   }
-
-//   if (playerId === socket.id) {
-//     reactionTime = playerReactionTime;
-
-//     // Uppdatera UI med reaktionstiden för spelare 1
-//     if (player1ReactiontimeEl) {
-//       player1ReactiontimeEl.innerText = `Reaktionstid: ${reactionTime} ms`;
-//     }
-//   } else {
-//     // Uppdatera UI med reaktionstiden för spelare 2
-//     if (player2ReactiontimeEl) {
-//       player2ReactiontimeEl.innerText = `Reaktionstid: ${playerReactionTime} ms`;
-//     }
-
-//     // Update UI with player's reaction time
-//     // Implement this function based on your UI structure
-//   }
-// });
 
 if (startNewGameFormEl) {
   startNewGameFormEl.addEventListener("submit", (e) => {
@@ -328,7 +229,6 @@ if (startNewGameFormEl) {
 
 // Create varible for username
 let username: string | null = null;
-// let highScore = 0;
 
 // add eventlistner listening for when the form-username is submitted
 startPageFormEl.addEventListener("submit", (e) => {
@@ -348,8 +248,8 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, roomId, handlePlayerJoinRequest);
-  console.log("Emitted 'playerJoinRequest' event to server", username);
+  socket.emit("playerJoinRequest", username, roomId);
+  console.log("Emitted 'playerJoinRequest' event to server", username, roomId);
 
   // function to display the waiting-lobby
   showWaitingRoom();
@@ -357,7 +257,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
     console.log(
       "Room created: ",
-      event.roomId,
+      event.gameId,
       "With players: ",
       event.players
     );
@@ -393,10 +293,6 @@ socket.on("startGame", () => {
   gameFieldEl.style.display = "flex";
 
   console.log("Game started!");
-
-  // Initialize or reset your game here
-  // console.log("StartTimer i startGame");
-  // socket.emit("startTimer");
 });
 
 socket.on("reactionTimeForBoth", (elapsedTime: number) => {
@@ -407,7 +303,6 @@ socket.on("virusLogic", (position, delay) => {
   console.log(`in viruslogic 🐣New virus position: ${position}`);
 
   // Remove "virus" class from all grid items
-
   setTimeout(() => {
     gridItems.forEach((item) => {
       item.classList.remove("virus");
@@ -424,15 +319,11 @@ socket.on("virusLogic", (position, delay) => {
       if (socket.id && username) {
         startTimer(username, socket.id);
       }
-
-      // console.log("StartTimer i newPosition");
-      // socket.emit("startTimer");
     }
   }, delay);
 });
 
 //Add event listener to each grid item to remove virus on click.
-
 gridItems.forEach((gridItem) => {
   gridItem.addEventListener("click", () => {
     //e.preventDefault()
