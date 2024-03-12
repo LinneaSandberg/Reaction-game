@@ -129,19 +129,19 @@ const startTimer = (username: string, playerNumber: string) => {
 
 const stopTimer = (playerNumber: string) => {
   const elapsedTime = Date.now() - startTimePlayer1;
-  const secoundPlayerElaspsedTime = Date.now() - startTimePlayer2;
+  // const secoundPlayerElaspsedTime = Date.now() - startTimePlayer2;
+
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
-    socket.emit("virusClick", elapsedTime);
-    player2TimerEl.innerHTML = `${elapsedTime}`;
+    console.log("virusClick: elapsedTime", elapsedTime);
+    socket.emit("virusClick", { playerId: socket.id, elapsedTime: elapsedTime });
+    // player2TimerEl.innerHTML = `${elapsedTime}`;
 
   } else {
     clearInterval(timerIntervalPlayer2);
-    player1TimerEl.innerHTML = `${secoundPlayerElaspsedTime}`;
+    // player1TimerEl.innerHTML = `${secoundPlayerElaspsedTime}`;
     
   }
-
-
 };
 
 
@@ -377,6 +377,10 @@ socket.on("startGame", () => {
   // console.log("StartTimer i startGame");
   // socket.emit("startTimer");
 });
+
+socket.on("reactionTimeForBoth", (elapsedTime: number) => {
+  console.log("Detta är elapsedTime från reactionTimeForBoth: ", elapsedTime);
+})
 
 socket.on("virusLogic", (position, delay) => {
   console.log(`in viruslogic 🐣New virus position: ${position}`);

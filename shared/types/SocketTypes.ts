@@ -12,6 +12,7 @@ export interface ServerToClientEvents {
   startGame: () => void;
   virusHitConfirmed: () => void;
   gameOver: () => void;
+  reactionTimeForBoth: (elapsedTime: number) => void;
 }
 
 // Events emitted by the client to the server
@@ -22,7 +23,7 @@ export interface ClientToServerEvents {
     username: string,
     callback: (response: PlayerJoinResponse) => void
   ) => void;
-  virusClick: (elapsedTime: number) => void;
+  virusClick: (event: stopTimerEvent) => void;
 }
 
 export interface PlayerJoinResponse {

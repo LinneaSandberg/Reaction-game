@@ -194,13 +194,17 @@ export const handleConnection = (
 	// }
 
 	// Handling a virus hit from a client
-	socket.on("virusClick", (elapsedTime) => {
+	socket.on("virusClick", ({playerId, elapsedTime}) => {
 		// const currentPlayer = socket.id;
 		// const opponent = waitingPlayers.find(
 		// 	(player) => player.socketId !== currentPlayer
 		// );
-		// console.log("socketId:", socketId)
 		console.log("elapsedTime:", elapsedTime);
+		console.log("playerId:", playerId);
+
+		// console.log("socketId:", socketId)
+		socket.emit("reactionTimeForBoth", elapsedTime);
+
 		clicksInRound++;
 		if (clicksInRound === 2) {
 			clicksInRound = 0;
