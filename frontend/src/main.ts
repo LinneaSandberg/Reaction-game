@@ -61,10 +61,9 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
 player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
 
-let timerIntervalPlayer: ReturnType<typeof setInterval>;
+let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer: number;
-let reactionTimeout: number;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
@@ -80,7 +79,16 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
   timerElement.innerHTML = `${updatedTime}`;
 
   if (seconds >= 30) {
-    clearInterval(timerIntervalPlayer);
+    clearInterval(timerIntervalPlayer1);
+
+    const reactiontime = currentTime - startTime;
+
+    // Display result for active player
+    if (timerElement === player1TimerEl) {
+      console.log("Result for player 1: ", reactiontime);
+    } else {
+      console.log("Result for player 2: ", reactiontime);
+    }
   }
 };
 
@@ -91,15 +99,10 @@ const startTimer = (username: string, playerNumber: string) => {
 
   if (playerNumber === socket.id) {
     startTimePlayer = Date.now();
-    clearTimeout(reactionTimeout);
-    timerIntervalPlayer = setInterval(
+    timerIntervalPlayer1 = setInterval(
       () => timer(player1TimerEl, startTimePlayer),
       100
     );
-
-    reactionTimeout = setTimeout(() => {
-      stopTimer(playerNumber, true);
-    }, 30000);
   } /* else {
     startTimePlayer2 = Date.now();
     timerIntervalPlayer2 = setInterval(() => 
@@ -107,28 +110,16 @@ const startTimer = (username: string, playerNumber: string) => {
   } */
 };
 
-const stopTimer = (playerNumber: string, autoClick = false) => {
-  //const elapsedTime = Date.now() - startTimePlayer;
-  const elapsedTime = autoClick ? 30000 : Date.now() - startTimePlayer;
-  if (playerNumber === socket.id) {
-    clearInterval(timerIntervalPlayer);
+const stopTimer = (playerNumber: string) => {
+  const elapsedTime = Date.now() - startTimePlayer;
 
-    clearTimeout(reactionTimeout);
+  if (playerNumber === socket.id) {
+    clearInterval(timerIntervalPlayer1);
 
     socket.emit("virusClick", {
       playerId: socket.id,
       elapsedTime: elapsedTime,
-      autoclick: false,
     });
-
-    if (autoClick) {
-      console.log("Automatic click registered after 30 seconds.");
-      socket.emit("virusClick", {
-        playerId: socket.id,
-        elapsedTime: elapsedTime,
-        autoclick: true,
-      });
-    }
     // player2TimerEl.innerHTML = `${elapsedTime}`;
   } else {
     clearInterval(timerIntervalPlayer2);
@@ -202,13 +193,13 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-socket.on("gameScore", (playerId: string, playerPoints: number) => {
-  if (playerId !== socket.id) {
-    player1pEl.innerHTML = `Points: ${playerPoints}`;
-  } else {
+socket.on("gameScore", (socketId: string, playerPoints: number) => {
+  if (socketId !== socket.id) {
     player2pEl.innerHTML = `Points: ${playerPoints}`;
+  } else {
+    player1pEl.innerHTML = `Points: ${playerPoints}`;
   }
-  console.log("Points, playerId:", playerPoints, playerId);
+  console.log("Points, playerId:", playerPoints, socketId);
 });
 
 socket.emit("highscore", (highscores) => {
@@ -232,6 +223,11 @@ if (startNewGameFormEl) {
     e.preventDefault();
 
     showWaitingRoom();
+
+    player1TimerEl.innerText = `00:000`;
+    player2TimerEl.innerText = `00:000`;
+    player1pEl.innerHTML = `Points: 0`;
+    player2pEl.innerHTML = `Points: 0`;
 
     if (username) {
       socket.emit("playerJoinRequest", username);
@@ -358,6 +354,10 @@ socket.on("gameOver", () => {
   gameOverPageEl.classList.remove("hide");
   document.querySelector("#play-again")?.addEventListener("click", () => {
     gameOverPageEl.classList.add("hide");
+    player1TimerEl.innerText = `00:000`;
+    player2TimerEl.innerText = `00:000`;
+    player1pEl.innerHTML = `Points: 0`;
+    player2pEl.innerHTML = `Points: 0`;
     startPageEl.classList.remove("hide");
   });
 

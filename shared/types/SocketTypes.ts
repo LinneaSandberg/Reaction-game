@@ -52,7 +52,6 @@ export interface WaitingPlayers {
 export interface stopTimerEvent {
   playerId: string;
   elapsedTime: number;
-  autoclick: boolean;
 }
 
 export interface UserSocketMap {

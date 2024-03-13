@@ -10,7 +10,7 @@
   background-color: grey;
 }
 
-#submit-username, #startGame-submit {
+#submit-username, #startGame-submit, #play-again  {
   border: 2px solid greenyellow;
   background-color: lightgray;
   border-radius: 10px;
