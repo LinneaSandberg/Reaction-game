@@ -11,7 +11,12 @@ import {
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, findPlayer, findPlayersInGame, getPlayer } from "../services/PlayerService";
+import {
+	deletePlayer,
+	findPlayer,
+	findPlayersInGame,
+	getPlayer,
+} from "../services/PlayerService";
 import {
 	createHighscore,
 	getAllHighscores,
@@ -70,7 +75,7 @@ export const handleConnection = (
 
 		for (const playerId in reactionTimes) {
 			if (reactionTimes.hasOwnProperty(playerId)) {
-			  delete reactionTimes[playerId];
+				delete reactionTimes[playerId];
 			}
 		}
 
@@ -185,10 +190,7 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 9000) + 1000;
 	}
 
-	const highscoreCalc = (
-		playerId: string,
-		reactionTimes: ReactionTimes
-	) => {
+	const highscoreCalc = (playerId: string, reactionTimes: ReactionTimes) => {
 		const averageHighscores: AverageHighscores = {};
 
 		const playerTimes = reactionTimes[playerId];
@@ -209,9 +211,7 @@ export const handleConnection = (
 		playerId: string,
 		highscore: AverageHighscores
 	) => {
-		for (const [playerId, playerHighscore] of Object.entries(
-			highscore
-		)) {
+		for (const [playerId, playerHighscore] of Object.entries(highscore)) {
 			const player = await getPlayer(playerId);
 
 			if (player) {
@@ -230,7 +230,7 @@ export const handleConnection = (
 	const calculatePoints = async (
 		player1: string,
 		player2: string,
-		reactionTimes: ReactionTimes,
+		reactionTimes: ReactionTimes
 	) => {
 		const points: Record<string, number> = {};
 
@@ -239,8 +239,6 @@ export const handleConnection = (
 
 		console.log("reactionTimesPlayer1: ", reactionTimesPlayer1);
 		console.log("reactionTimesPlayer2: ", reactionTimesPlayer2);
-
-
 
 		for (let round = 0; round < maxRounds; round++) {
 			let fastestTime = Infinity;
@@ -251,7 +249,8 @@ export const handleConnection = (
 
 				if (
 					playerTimes.length > round &&
-					playerTimes[round] < fastestTime
+					playerTimes[round] < fastestTime &&
+					playerTimes[round] < 30000 // Kontrollera om reaktionstiden är mindre än 30 sekunder
 				) {
 					fastestTime = playerTimes[round];
 					fastestPlayerId = id;
@@ -263,7 +262,7 @@ export const handleConnection = (
 					points[fastestPlayerId] = 0;
 				}
 
-				points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
+				points[fastestPlayerId] += 1; // Tillämpa en regel där om en spelares reaktionstid är 30 sekunder eller mer, tilldelas 1 poäng till motståndaren
 			}
 		}
 
@@ -285,91 +284,84 @@ export const handleConnection = (
 				const sokcetId: string = socket.id;
 				const gameId = socketToGameMap[socket.id];
 				if (gameId) {
-					io.to(gameId).emit(
-						"gameScore",
-						sokcetId,
-						playerPoints
-						);
-					}
+					io.to(gameId).emit("gameScore", sokcetId, playerPoints);
 				}
+			}
 		}
 	};
 
 	// handling a virus hit from a client
-		socket.on("virusClick", async ({ elapsedTime }) => {
-			const playerId: string = socket.id;
-			const gameId = socketToGameMap[socket.id];
-			if (gameId) {
-				io.to(gameId).emit(
-					"opponentReactionTime",
-					playerId,
-					elapsedTime
-				);
+	socket.on("virusClick", async ({ elapsedTime }) => {
+		const playerId: string = socket.id;
+		const gameId = socketToGameMap[socket.id];
+		if (gameId) {
+			io.to(gameId).emit("opponentReactionTime", playerId, elapsedTime);
+		}
+		if (!gameId || !gameStateMap[gameId]) {
+			console.error("Game ID not found for socket:", socket.id);
+			return; // Handle this error as appropriate
+		}
+		console.log(
+			`Game ID for virusClick: ${gameId}, Current Round: ${gameStateMap[gameId].currentRound}`
+		);
+		console.log("elapsedTime:", elapsedTime);
+
+		if (!reactionTimes[playerId]) {
+			reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
+		}
+		(reactionTimes[playerId] as number[]).push(elapsedTime);
+		console.log("reactionTimes", reactionTimes);
+
+		const playerIds = Object.keys(reactionTimes);
+
+		const allPlayersHaveEnoughEntries = playerIds.every(
+			(id) => reactionTimes[id].length >= 10
+		);
+
+		if (allPlayersHaveEnoughEntries) {
+			for (const playerId of playerIds) {
+				// Call highscoreCalc for each player
+				highscoreCalc(playerId, reactionTimes);
 			}
-			if (!gameId || !gameStateMap[gameId]) {
-				console.error("Game ID not found for socket:", socket.id);
-				return; // Handle this error as appropriate
-			}
+		} else {
 			console.log(
-				`Game ID for virusClick: ${gameId}, Current Round: ${gameStateMap[gameId].currentRound}`
+				"Inte tillräckligt med reaktionstider för att beräkna highscore."
 			);
-			console.log("elapsedTime:", elapsedTime);
+		}
+		clicksInRound++;
+		if (clicksInRound === 2) {
+			// player on reactiontimes and player one socket.id, player two reaction times and player two socket.id OSV!
+			// behöver ta emot allas playerId
+			// använd gameId
 
-			if (!reactionTimes[playerId]) {
-				reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
+			const players = await findPlayersInGame(gameId);
+			console.log("Player 1 in game: ", players?.players[0].id);
+			console.log("Player 2 in game: ", players?.players[1].id);
+
+			if (players) {
+				const player1 = players.players[0].id;
+				const player2 = players.players[1].id;
+
+				calculatePoints(player1, player2, reactionTimes);
 			}
-			(reactionTimes[playerId] as number[]).push(elapsedTime);
-			console.log("reactionTimes", reactionTimes);
 
-			const playerIds = Object.keys(reactionTimes);
-
-			const allPlayersHaveEnoughEntries = playerIds.every(
-				(id) => reactionTimes[id].length >= 10
-			);
-
-			if (allPlayersHaveEnoughEntries) {
-				for (const playerId of playerIds) {
-					// Call highscoreCalc for each player
-					highscoreCalc(playerId, reactionTimes);
-				}
+			clicksInRound = 0;
+			//currentRound++;
+			//console.log("currentRound", currentRound);
+			if (gameStateMap[gameId].currentRound >= maxRounds) {
+				console.log("Triggering Game Over");
+				gameStateMap[gameId].currentRound = 0;
+				io.to(gameId).emit("gameOver");
 			} else {
+				// Proceed to the next round
 				console.log(
-					"Inte tillräckligt med reaktionstider för att beräkna highscore."
+					"📌New round from virusClick in socket controller",
+					gameStateMap[gameId].currentRound
 				);
+				startRound(io, gameId);
 			}
-			clicksInRound++;
-			if (clicksInRound === 2) {
-				// player on reactiontimes and player one socket.id, player two reaction times and player two socket.id OSV!
-				// behöver ta emot allas playerId
-				// använd gameId
-
-				const players = await findPlayersInGame(gameId);
-				console.log("Player 1 in game: ", players?.players[0].id);
-				console.log("Player 2 in game: ", players?.players[1].id);
-
-				if (players) {
-					const player1 = players.players[0].id;
-					const player2 = players.players[1].id;
-
-					calculatePoints(player1, player2, reactionTimes);
-				}
-
-				clicksInRound = 0;
-				//currentRound++;
-				//console.log("currentRound", currentRound);
-				if (gameStateMap[gameId].currentRound >= maxRounds) {
-					console.log("Triggering Game Over");
-					gameStateMap[gameId].currentRound = 0;
-					io.to(gameId).emit("gameOver");
-				} else {
-					// Proceed to the next round
-					console.log(
-						"📌New round from virusClick in socket controller", gameStateMap[gameId].currentRound
-					);
-					startRound(io, gameId);
-				}
-			}
-		});
+		}
+	});
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();
@@ -410,7 +402,6 @@ export const handleConnection = (
 			const deletedPlayer = await deletePlayer(socket.id);
 
 			io.to(player.gameId).emit("playerLeft", player.username);
-
 		}
 	});
 };
