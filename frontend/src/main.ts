@@ -338,7 +338,7 @@ socket.on("gameScore", (playerId, points) => {
   if (playerId === currentPlayerId) {
     playerOnePoints.innerHTML = `${username} ${points}`;
   } else {
-    playerTwoPonts.innerHTML = `<3 Frenemy <3: ${points}`;
+    playerTwoPonts.innerHTML = `Frenemy: ${points}`;
   }
 });
   
