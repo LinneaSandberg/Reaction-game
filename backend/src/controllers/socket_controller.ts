@@ -99,8 +99,6 @@ export const handleConnection = (
 				},
 			});
 
-			console.log("Gamne: ", game);
-
 			let gameId = game.id;
 
 			function initiateCountdown(
@@ -129,9 +127,6 @@ export const handleConnection = (
 					playerSocket.join(gameId);
 					socketToGameMap[player.socketId] = gameId;
 				}
-
-				console.log("After `Playersinroom` gameId: ", gameId);
-				console.log("After `Playersinroom` players in room: ", game.id);
 			});
 			io.to(gameId).emit("roomCreated", {
 				gameId,
@@ -157,18 +152,10 @@ export const handleConnection = (
 			gameStateMap[gameId].currentRound++;
 			gameStateMap[gameId].clicksInRound = 0; // Reset for new round
 			gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
-			console.log(
-				"📌New round from startRound in socket controller",
-				gameStateMap[gameId].clicksInRound
-			);
 		}
 		const newVirusDelay = virusDelay();
 		const newVirusPosition = virusPosition();
-		console.log(
-			`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
-		);
 
-		console.log("In startRound, player.gameId: ", gameId);
 		io.to(gameId).emit("virusLogic", newVirusPosition, newVirusDelay);
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
@@ -199,8 +186,6 @@ export const handleConnection = (
 
 		averageHighscores[playerId] = averageTime;
 
-		console.log("averageHighscores", averageHighscores);
-
 		saveHighscoresToDatabase(playerId, averageHighscores);
 	};
 
@@ -216,8 +201,6 @@ export const handleConnection = (
 
 			if (player) {
 				const username = player.username;
-				console.log("username ", username);
-				console.log("playerHighscore ", playerHighscore);
 
 				if (username) {
 					await createHighscore(username, playerHighscore);
@@ -225,7 +208,6 @@ export const handleConnection = (
 			}
 		}
 	};
-	// const points: Record<string, number> = {};
 
 	const calculatePoints = async (
 		player1: string,
@@ -279,15 +261,13 @@ export const handleConnection = (
 				// 	await createHighscore(username, playerHighscore);
 				// }
 
-				console.log("playerId", playerId);
+				// console.log("playerId", playerId);
 				console.log("points", points);
-				// io.emit("gameScore", points);
-				const sokcetId: string = socket.id;
 				const gameId = socketToGameMap[socket.id];
 				if (gameId) {
 					io.to(gameId).emit(
 						"gameScore",
-						sokcetId,
+						player.id,
 						playerPoints
 						);
 					}
@@ -311,9 +291,8 @@ export const handleConnection = (
 				return; // Handle this error as appropriate
 			}
 			console.log(
-				`Game ID for virusClick: ${gameId}, Current Round: ${gameStateMap[gameId].currentRound}`
+				`Current Round: ${gameStateMap[gameId].currentRound}`
 			);
-			console.log("elapsedTime:", elapsedTime);
 
 			if (!reactionTimes[playerId]) {
 				reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
@@ -356,16 +335,12 @@ export const handleConnection = (
 
 				clicksInRound = 0;
 				//currentRound++;
-				//console.log("currentRound", currentRound);
 				if (gameStateMap[gameId].currentRound >= maxRounds) {
 					console.log("Triggering Game Over");
 					gameStateMap[gameId].currentRound = 0;
 					io.to(gameId).emit("gameOver");
 				} else {
 					// Proceed to the next round
-					console.log(
-						"📌New round from virusClick in socket controller", gameStateMap[gameId].currentRound
-					);
 					startRound(io, gameId);
 				}
 			}
@@ -378,11 +353,9 @@ export const handleConnection = (
 
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
-		debug("A Player disconnected", socket.id);
 
 		// Find player to know what room that player was in
 		const player = await getPlayer(socket.id);
-		console.log("Get players to now the room: ", player);
 
 		// If player does not exist, the return
 		if (!player) {
@@ -410,7 +383,6 @@ export const handleConnection = (
 			const deletedPlayer = await deletePlayer(socket.id);
 
 			io.to(player.gameId).emit("playerLeft", player.username);
-
 		}
 	});
 };
