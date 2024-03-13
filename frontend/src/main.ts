@@ -64,7 +64,6 @@ player2TimerEl.innerText = `00:000`;
 let timerIntervalPlayer: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer: number;
-let roomId: string;
 let reactionTimeout: NodeJS.Timeout;
 
 
@@ -84,14 +83,6 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer);
 
-    const reactiontime = currentTime - startTime;
-
-    // Display result for active player
-    if (timerElement === player1TimerEl) {
-      console.log("Result for player 1: ", reactiontime);
-    } else {
-      console.log("Result for player 2: ", reactiontime);
-    }
   }
 };
 

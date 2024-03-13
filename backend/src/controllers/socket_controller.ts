@@ -350,7 +350,7 @@ export const handleConnection = (
 				if (players) {
 					const player1 = players.players[0].id;
 					const player2 = players.players[1].id;
-					
+
 					calculatePoints(player1, player2, reactionTimes);
 				}
 
@@ -364,7 +364,7 @@ export const handleConnection = (
 				} else {
 					// Proceed to the next round
 					console.log(
-						"📌New round from virusClick in socket controller"
+						"📌New round from virusClick in socket controller", gameStateMap[gameId].currentRound
 					);
 					startRound(io, gameId);
 				}
@@ -410,7 +410,7 @@ export const handleConnection = (
 			const deletedPlayer = await deletePlayer(socket.id);
 
 			io.to(player.gameId).emit("playerLeft", player.username);
-			
+
 		}
 	});
 };
