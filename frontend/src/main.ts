@@ -61,10 +61,12 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
 player1TimerEl.innerText = `00:000`;
 player2TimerEl.innerText = `00:000`;
 
-let timerIntervalPlayer1: ReturnType<typeof setInterval>;
+let timerIntervalPlayer: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
-let startTimePlayer1: number;
+let startTimePlayer: number;
 let roomId: string;
+let reactionTimeout: NodeJS.Timeout;
+
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
@@ -80,7 +82,7 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
   timerElement.innerHTML = `${updatedTime}`;
 
   if (seconds >= 30) {
-    clearInterval(timerIntervalPlayer1);
+    clearInterval(timerIntervalPlayer);
 
     const reationtime = currentTime - startTime;
     console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
@@ -100,11 +102,16 @@ const startTimer = (username: string, playerNumber: string) => {
   //startTimePlayer2 = Date.now();
 
   if (playerNumber === socket.id) {
-    startTimePlayer1 = Date.now();
-    timerIntervalPlayer1 = setInterval(
-      () => timer(player1TimerEl, startTimePlayer1),
+    startTimePlayer = Date.now();
+    clearTimeout(reactionTimeout);
+    timerIntervalPlayer = setInterval(
+      () => timer(player1TimerEl, startTimePlayer),
       100
     );
+
+    reactionTimeout = setTimeout(() => {
+      stopTimer(playerNumber, true); 
+    }, 30000);
   } /* else {
     startTimePlayer2 = Date.now();
     timerIntervalPlayer2 = setInterval(() => 
@@ -112,16 +119,28 @@ const startTimer = (username: string, playerNumber: string) => {
   } */
 };
 
-const stopTimer = (playerNumber: string) => {
-  const elapsedTime = Date.now() - startTimePlayer1;
-
+const stopTimer = (playerNumber: string, autoClick = false) => {
+  //const elapsedTime = Date.now() - startTimePlayer;
+  const elapsedTime = autoClick ? 30000 : Date.now() - startTimePlayer;
   if (playerNumber === socket.id) {
-    clearInterval(timerIntervalPlayer1);
+    clearInterval(timerIntervalPlayer);
+
+    clearTimeout(reactionTimeout);
 
     socket.emit("virusClick", {
       playerId: socket.id,
       elapsedTime: elapsedTime,
+      autoclick: false,
     });
+
+    if (autoClick) {
+      console.log("Automatic click registered after 30 seconds.");
+      socket.emit("virusClick", {
+        playerId: socket.id,
+        elapsedTime: elapsedTime,
+        autoclick: true,
+      });
+    }
     // player2TimerEl.innerHTML = `${elapsedTime}`;
   } else {
     clearInterval(timerIntervalPlayer2);
