@@ -65,7 +65,7 @@ player2TimerEl.innerText = `00:000`;
 let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
 let startTimePlayer1: number;
-let roomId: string;
+// let roomId: string;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
@@ -84,7 +84,7 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
     clearInterval(timerIntervalPlayer1);
 
     const reationtime = currentTime - startTime;
-    console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
+    // console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
 
     // Display result for active player
     if (timerElement === player1TimerEl) {
@@ -228,6 +228,10 @@ if (startNewGameFormEl) {
     e.preventDefault();
 
     showWaitingRoom();
+
+    if (username) {
+      socket.emit("playerJoinRequest", username);
+    }
   });
 }
 
@@ -250,7 +254,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, roomId);
+  socket.emit("playerJoinRequest", username);
 
   // function to display the waiting-lobby
   showWaitingRoom();
@@ -351,5 +355,6 @@ socket.on("gameOver", () => {
     gameOverPageEl.classList.add("hide");
     startPageEl.classList.remove("hide");
   });
+  
   // Visa resultat, erbjuda att starta nytt spel...
 });

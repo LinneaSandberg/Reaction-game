@@ -47,7 +47,7 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-	socket.on("playerJoinRequest", async (username, gameId) => {
+	socket.on("playerJoinRequest", async (username) => {
 		const existingPlayer = await prisma.player.findUnique({
 			where: {
 				id: socket.id,
@@ -106,6 +106,7 @@ export const handleConnection = (
 						clearInterval(countdownInterval);
 						setTimeout(() => {
 							io.to(gameId).emit("startGame");
+							startRound(io, gameId);
 						}, 100);
 					}
 				}, 1000);
@@ -120,64 +121,164 @@ export const handleConnection = (
 					socketToGameMap[player.socketId] = gameId;
 				}
 
-				// Join room `gameId`
-				socket.join(gameId);
-				io.to(gameId).emit("roomCreated", {
-					gameId,
-					players: playersInRoom.map((p) => p.players),
-				});
 				console.log("After `Playersinroom` gameId: ", gameId);
 				console.log("After `Playersinroom` players in room: ", game.id);
 			});
+			io.to(gameId).emit("roomCreated", {
+				gameId,
+				players: playersInRoom.map((p) => p.players),
+			});
 			initiateCountdown(io);
-			startRound(io, gameId);
 		} else {
-			io.to(gameId).emit("waitingForPlayer", {
+			socket.emit("waitingForPlayer", {
 				message: "waiting for another player to join!",
 			});
 		}
+	});
 
-		function startRound(io: Server, gameId: string) {
-			if (!gameStateMap[gameId]) {
-				gameStateMap[gameId] = {
-					currentRound: 1,
-					clicksInRound: 0,
-					virusActive: false,
-				};
-			} else {
-				// Increment round or handle game continuation logic
-				gameStateMap[gameId].currentRound++;
-				gameStateMap[gameId].clicksInRound = 0; // Reset for new round
-				gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
-				console.log(
-					"📌New round from startRound in socket controller",
-					gameStateMap[gameId].clicksInRound
-				);
-			}
-			const newVirusDelay = virusDelay();
-			const newVirusPosition = virusPosition();
+	function startRound(io: Server, gameId: string) {
+		if (!gameStateMap[gameId]) {
+			gameStateMap[gameId] = {
+				currentRound: 1,
+				clicksInRound: 0,
+				virusActive: false,
+			};
+		} else {
+			// Increment round or handle game continuation logic
+			gameStateMap[gameId].currentRound++;
+			gameStateMap[gameId].clicksInRound = 0; // Reset for new round
+			gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
 			console.log(
-				`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
+				"📌New round from startRound in socket controller",
+				gameStateMap[gameId].clicksInRound
 			);
+		}
+		const newVirusDelay = virusDelay();
+		const newVirusPosition = virusPosition();
+		console.log(
+			`🐉 Skickar ny virusposition: ${newVirusPosition} från startRound i socket_controller`
+		);
 
-			console.log("In startRound, player.gameId: ", gameId);
-			io.to(gameId).emit("virusLogic", newVirusPosition, newVirusDelay);
-			virusActive = true; // Allow virus to be "hit" again
-			virusStartTime = Date.now(); // Update starttime to calculate reactiontime
-			// thirtySecTimer(io);
+		console.log("In startRound, player.gameId: ", gameId);
+		io.to(gameId).emit("virusLogic", newVirusPosition, newVirusDelay);
+		virusActive = true; // Allow virus to be "hit" again
+		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
+		// thirtySecTimer(io);
+	}
+
+	// random virus position
+	function virusPosition(): number {
+		return Math.floor(Math.random() * 25);
+	}
+
+	// random virus delay 1-10 seconds
+	function virusDelay(): number {
+		return Math.floor(Math.random() * 9000) + 1000;
+	}
+
+	const highscoreCalc = (
+		playerId: string,
+		reactionTimes: ReactionTimes
+	) => {
+		const averageHighscores: AverageHighscores = {};
+
+		const playerTimes = reactionTimes[playerId];
+
+		const averageTime =
+			playerTimes.reduce((sum, time) => sum + time, 0) /
+			playerTimes.length;
+
+		averageHighscores[playerId] = averageTime;
+
+		console.log("averageHighscores", averageHighscores);
+
+		saveHighscoresToDatabase(playerId, averageHighscores);
+	};
+
+	// function for saving highscores in database
+	const saveHighscoresToDatabase = async (
+		playerId: string,
+		highscore: AverageHighscores
+	) => {
+		for (const [playerId, playerHighscore] of Object.entries(
+			highscore
+		)) {
+			const player = await getPlayer(playerId);
+
+			if (player) {
+				const username = player.username;
+				console.log("username ", username);
+				console.log("playerHighscore ", playerHighscore);
+
+				if (username) {
+					await createHighscore(username, playerHighscore);
+				}
+			}
+		}
+	};
+	// const points: Record<string, number> = {};
+
+	const calculatePoints = async (
+		playerId: string,
+		reactionTimes: ReactionTimes,
+		maxRounds: number
+	) => {
+		const points: Record<string, number> = {};
+
+		for (let round = 0; round < maxRounds; round++) {
+			let fastestTime = Infinity;
+			let fastestPlayerId = "";
+
+			for (const id in reactionTimes) {
+				const playerTimes = reactionTimes[id];
+
+				if (
+					playerTimes.length > round &&
+					playerTimes[round] < fastestTime
+				) {
+					fastestTime = playerTimes[round];
+					fastestPlayerId = id;
+				}
+			}
+
+			if (fastestPlayerId) {
+				if (!points[fastestPlayerId]) {
+					points[fastestPlayerId] = 0;
+				}
+
+				points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
+			}
 		}
 
-		// random virus position
-		function virusPosition(): number {
-			return Math.floor(Math.random() * 25);
-		}
+		for (const [playerId, playerPoints] of Object.entries(points)) {
+			const player = await getPlayer(playerId);
 
-		// random virus delay 1-10 seconds
-		function virusDelay(): number {
-			return Math.floor(Math.random() * 9000) + 1000;
-		}
+			if (player) {
+				const username = player.username;
+				console.log("username ", username);
+				console.log("playerPoints ", playerPoints);
 
-		// handling a virus hit from a client
+				// if (username) {
+				// 	await createHighscore(username, playerHighscore);
+				// }
+
+				console.log("playerId", playerId);
+				console.log("points", points);
+				// io.emit("gameScore", points);
+				const sokcetId: string = socket.id;
+				const gameId = socketToGameMap[socket.id];
+				if (gameId) {
+					io.to(gameId).emit(
+						"gameScore",
+						sokcetId,
+						playerPoints
+						);
+					}
+				}
+		}
+	};
+
+	// handling a virus hit from a client
 		socket.on("virusClick", async ({ elapsedTime }) => {
 			const playerId: string = socket.id;
 			const gameId = socketToGameMap[socket.id];
@@ -197,10 +298,8 @@ export const handleConnection = (
 			);
 			console.log("elapsedTime:", elapsedTime);
 
-			// socket.emit("reactionTimeForBoth", elapsedTime);
-
 			if (!reactionTimes[playerId]) {
-				reactionTimes[playerId] = [];
+				reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
 			}
 			(reactionTimes[playerId] as number[]).push(elapsedTime);
 			console.log("reactionTimes", reactionTimes);
@@ -223,6 +322,9 @@ export const handleConnection = (
 			}
 			clicksInRound++;
 			if (clicksInRound === 2) {
+				// player on reactiontimes and player one socket.id, player two reaction times and player two socket.id OSV!
+				// behöver ta emot allas playerId
+				// använd gameId
 				calculatePoints(playerId, reactionTimes, maxRounds);
 
 				clicksInRound = 0;
@@ -241,111 +343,6 @@ export const handleConnection = (
 				}
 			}
 		});
-
-		const highscoreCalc = (
-			playerId: string,
-			reactionTimes: ReactionTimes
-		) => {
-			const averageHighscores: AverageHighscores = {};
-
-			const playerTimes = reactionTimes[playerId];
-
-			const averageTime =
-				playerTimes.reduce((sum, time) => sum + time, 0) /
-				playerTimes.length;
-
-			averageHighscores[playerId] = averageTime;
-
-			console.log("averageHighscores", averageHighscores);
-
-			saveHighscoresToDatabase(playerId, averageHighscores);
-		};
-
-		// function for saving highscores in database
-		const saveHighscoresToDatabase = async (
-			playerId: string,
-			highscore: AverageHighscores
-		) => {
-			for (const [playerId, playerHighscore] of Object.entries(
-				highscore
-			)) {
-				const player = await getPlayer(playerId);
-
-				if (player) {
-					const username = player.username;
-					console.log("username ", username);
-					console.log("playerHighscore ", playerHighscore);
-
-					if (username) {
-						await createHighscore(username, playerHighscore);
-					}
-				}
-			}
-		};
-		// const points: Record<string, number> = {};
-
-		const calculatePoints = async (
-			playerId: string,
-			reactionTimes: ReactionTimes,
-			maxRounds: number
-		) => {
-			const points: Record<string, number> = {};
-
-			for (let round = 0; round < maxRounds; round++) {
-				let fastestTime = Infinity;
-				let fastestPlayerId = "";
-
-				for (const id in reactionTimes) {
-					const playerTimes = reactionTimes[id];
-
-					if (
-						playerTimes.length > round &&
-						playerTimes[round] < fastestTime
-					) {
-						fastestTime = playerTimes[round];
-						fastestPlayerId = id;
-					}
-				}
-
-				if (fastestPlayerId) {
-					if (!points[fastestPlayerId]) {
-						points[fastestPlayerId] = 0;
-					}
-
-					points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
-				}
-			}
-
-			for (const [playerId, playerPoints] of Object.entries(points)) {
-				const player = await getPlayer(playerId);
-
-				if (player) {
-					const username = player.username;
-					console.log("username ", username);
-					console.log("playerPoints ", playerPoints);
-
-					// if (username) {
-					// 	await createHighscore(username, playerHighscore);
-					// }
-
-					console.log("playerId", playerId);
-					console.log("points", points);
-					// io.emit("gameScore", points);
-					const sokcetId: string = socket.id;
-					const gameId = socketToGameMap[socket.id];
-					if (gameId) {
-						io.to(gameId).emit(
-							"gameScore",
-							sokcetId,
-							playerPoints
-							);
-						}
-					}
-			}
-
-			// return points;
-		};
-	});
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();
@@ -386,6 +383,7 @@ export const handleConnection = (
 			const deletedPlayer = await deletePlayer(socket.id);
 
 			io.to(player.gameId).emit("playerLeft", player.username);
+			
 		}
 	});
 };

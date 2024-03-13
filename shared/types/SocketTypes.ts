@@ -20,7 +20,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   // playerJoinRequest: (username: string, callback: (success: boolean) => void) => void;
   roomForPlayers: (callback: (rooms: Room[]) => void) => void;
-  playerJoinRequest: (username: string, roomId: string) => void;
+  playerJoinRequest: (username: string) => void;
   highscore: (callback: (highscores: Highscore[]) => void) => void;
   virusClick: (event: stopTimerEvent) => void;
   gameScore: () => void;
