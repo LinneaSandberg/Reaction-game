@@ -205,14 +205,14 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-socket.on("gameScore", (socketId: string, playerPoints: number) => {
+socket.on("gameScore", (playerId: string, playerPoints: number) => {
 
-   if (socketId !== socket.id) {
+   if (playerId !== socket.id) {
     player1pEl.innerHTML = `Points: ${playerPoints}`;
   } else {
      player2pEl.innerHTML = `Points: ${playerPoints}`;
    }
-  console.log("Points, playerId:", playerPoints, socketId);
+  console.log("Points, playerId:", playerPoints, playerId);
 });
 
 socket.emit("highscore", (highscores) => {
