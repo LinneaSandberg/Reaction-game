@@ -20,6 +20,13 @@ export interface Highscore {
   highscore: number;
 }
 
+export interface PastGames {
+  username: string;
+  score: number | null; 
+}
+
+export type GameResults = PastGames[];
+
 export interface VirusPosition {
   position: number;
 }
@@ -32,3 +39,9 @@ export type StartGame = {
   virusPosition: number;
   virusDelay: number;
 };
+
+export interface Match {
+  id: string;
+  createdAt: Date;
+  players: Player[];
+}

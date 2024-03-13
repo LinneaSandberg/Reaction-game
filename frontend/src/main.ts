@@ -6,6 +6,7 @@ import {
   WaitingForPlayersEvent,
 } from "@shared/types/SocketTypes";
 import "./assets/scss/style.scss";
+import { GameResults } from "@shared/types/Models";
 
 const SOCKET_HOST = import.meta.env.VITE_SOCKET_HOST;
 
@@ -52,6 +53,9 @@ const player2TimerEl = document.querySelector(
 ) as HTMLParagraphElement;
 const highscoreChartEl = document.querySelector(
   ".highscoreChart"
+) as HTMLUListElement;
+const gamesEl = document.querySelector(
+  ".games"
 ) as HTMLUListElement;
 
 // Connect to Socket.IO Server
@@ -210,6 +214,15 @@ socket.emit("highscore", (highscores) => {
     .slice(0, 5)
     .map(
       (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
+    )
+    .join("");
+});
+
+socket.on("pastGames", (oneGame: GameResults) => {
+  console.log("pastGames", oneGame);
+  gamesEl.innerHTML = oneGame
+    .map(
+      (game) => `<li>${game.username}: ${game.score}</li>`
     )
     .join("");
 });

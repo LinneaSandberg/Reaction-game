@@ -257,6 +257,15 @@ export const handleConnection = (
 				console.log("username ", username);
 				console.log("playerPoints ", playerPoints);
 
+				await prisma.player.update({
+					where: {
+						id: player.id,
+					},
+					data: {
+						score: playerPoints,
+					},
+				});
+
 				// if (username) {
 				// 	await createHighscore(username, playerHighscore);
 				// }
@@ -273,6 +282,44 @@ export const handleConnection = (
 					}
 				}
 		}
+
+		const gameId = socketToGameMap[socket.id];
+		const getGame = await prisma.game.findUnique({
+			where: {
+				id: gameId,
+			},
+			include: {
+				players: {
+					select: {
+						username: true,
+						score: true,
+					},
+				},
+			},
+		});
+
+		console.log("getGame: ", getGame);
+
+		const allGames = await prisma.game.findMany({
+			take: 10,
+			orderBy: {
+				createdAt: "desc",
+			},
+			include: {
+				players: {
+					select: {
+						username: true,
+						score: true,
+					},
+				},
+			},
+		});
+		console.log("allgames[0].players: ", allGames[0].players);
+
+		const oneGame = allGames[0].players;
+
+		io.emit("pastGames", oneGame);
+
 	};
 
 	// handling a virus hit from a client
