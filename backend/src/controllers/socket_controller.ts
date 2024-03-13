@@ -11,18 +11,19 @@ import {
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, findPlayer, getPlayer } from "../services/PlayerService";
+import { deletePlayer, findPlayer, findPlayersInGame, getPlayer } from "../services/PlayerService";
 import {
 	createHighscore,
 	getAllHighscores,
 } from "../services/HighscoreService";
+import { stringify } from "querystring";
 
 const debug = Debug("backend:socket_controller");
 
 // array of players waiting to play
 const waitingPlayers: WaitingPlayers[] = [];
 
-// array of reactiontimes
+// object of reactiontimes
 const reactionTimes: ReactionTimes = {};
 
 // initialize variables for timer state
@@ -67,6 +68,12 @@ export const handleConnection = (
 			});
 		}
 
+		for (const playerId in reactionTimes) {
+			if (reactionTimes.hasOwnProperty(playerId)) {
+			  delete reactionTimes[playerId];
+			}
+		}
+
 		waitingPlayers.push({
 			players: {
 				playerId: socket.id,
@@ -91,6 +98,8 @@ export const handleConnection = (
 					players: true,
 				},
 			});
+
+			console.log("Gamne: ", game);
 
 			let gameId = game.id;
 
@@ -219,11 +228,19 @@ export const handleConnection = (
 	// const points: Record<string, number> = {};
 
 	const calculatePoints = async (
-		playerId: string,
+		player1: string,
+		player2: string,
 		reactionTimes: ReactionTimes,
-		maxRounds: number
 	) => {
 		const points: Record<string, number> = {};
+
+		const reactionTimesPlayer1 = reactionTimes[player1];
+		const reactionTimesPlayer2 = reactionTimes[player2];
+
+		console.log("reactionTimesPlayer1: ", reactionTimesPlayer1);
+		console.log("reactionTimesPlayer2: ", reactionTimesPlayer2);
+
+
 
 		for (let round = 0; round < maxRounds; round++) {
 			let fastestTime = Infinity;
@@ -325,7 +342,17 @@ export const handleConnection = (
 				// player on reactiontimes and player one socket.id, player two reaction times and player two socket.id OSV!
 				// behöver ta emot allas playerId
 				// använd gameId
-				calculatePoints(playerId, reactionTimes, maxRounds);
+
+				const players = await findPlayersInGame(gameId);
+				console.log("Player 1 in game: ", players?.players[0].id);
+				console.log("Player 2 in game: ", players?.players[1].id);
+
+				if (players) {
+					const player1 = players.players[0].id;
+					const player2 = players.players[1].id;
+					
+					calculatePoints(player1, player2, reactionTimes);
+				}
 
 				clicksInRound = 0;
 				//currentRound++;

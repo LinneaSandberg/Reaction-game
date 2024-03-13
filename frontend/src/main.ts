@@ -1,7 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
-  Points,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
@@ -64,8 +63,7 @@ player2TimerEl.innerText = `00:000`;
 
 let timerIntervalPlayer1: ReturnType<typeof setInterval>;
 let timerIntervalPlayer2: ReturnType<typeof setInterval>;
-let startTimePlayer1: number;
-// let roomId: string;
+let startTimePlayer: number;
 
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
@@ -83,14 +81,13 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer1);
 
-    const reationtime = currentTime - startTime;
-    // console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
+    const reactiontime = currentTime - startTime;
 
     // Display result for active player
     if (timerElement === player1TimerEl) {
-      console.log("Result for player 1: ", reationtime);
+      console.log("Result for player 1: ", reactiontime);
     } else {
-      console.log("Result for player 2: ", reationtime);
+      console.log("Result for player 2: ", reactiontime);
     }
   }
 };
@@ -101,9 +98,9 @@ const startTimer = (username: string, playerNumber: string) => {
   //startTimePlayer2 = Date.now();
 
   if (playerNumber === socket.id) {
-    startTimePlayer1 = Date.now();
+    startTimePlayer = Date.now();
     timerIntervalPlayer1 = setInterval(
-      () => timer(player1TimerEl, startTimePlayer1),
+      () => timer(player1TimerEl, startTimePlayer),
       100
     );
   } /* else {
@@ -114,7 +111,7 @@ const startTimer = (username: string, playerNumber: string) => {
 };
 
 const stopTimer = (playerNumber: string) => {
-  const elapsedTime = Date.now() - startTimePlayer1;
+  const elapsedTime = Date.now() - startTimePlayer;
 
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
