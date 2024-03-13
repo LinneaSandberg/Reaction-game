@@ -1,7 +1,6 @@
 /**
  * Socket Controller
  */
-import Debug from "debug";
 import { Server, Socket } from "socket.io";
 import {
 	ClientToServerEvents,
@@ -16,9 +15,6 @@ import {
 	createHighscore,
 	getAllHighscores,
 } from "../services/HighscoreService";
-import { stringify } from "querystring";
-
-const debug = Debug("backend:socket_controller");
 
 // array of players waiting to play
 const waitingPlayers: WaitingPlayers[] = [];
@@ -30,7 +26,6 @@ const reactionTimes: ReactionTimes = {};
 let isGameRunning = false;
 let startTime: number;
 let intervalId: NodeJS.Timeout;
-let timeoutTimer: NodeJS.Timeout;
 export { isGameRunning, startTime, intervalId };
 
 // game variables
@@ -52,6 +47,7 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
+
 	socket.on("playerJoinRequest", async (username) => {
 		const existingPlayer = await prisma.player.findUnique({
 			where: {
@@ -163,7 +159,6 @@ export const handleConnection = (
 		io.to(gameId).emit("virusLogic", newVirusPosition, newVirusDelay);
 		virusActive = true; // Allow virus to be "hit" again
 		virusStartTime = Date.now(); // Update starttime to calculate reactiontime
-		// thirtySecTimer(io);
 	}
 
 	// random virus position
@@ -223,11 +218,6 @@ export const handleConnection = (
 		const reactionTimesPlayer1 = reactionTimes[player1];
 		const reactionTimesPlayer2 = reactionTimes[player2];
 
-		console.log("reactionTimesPlayer1: ", reactionTimesPlayer1);
-		console.log("reactionTimesPlayer2: ", reactionTimesPlayer2);
-
-
-
 		for (let round = 0; round < maxRounds; round++) {
 			let fastestTime = Infinity;
 			let fastestPlayerId = "";
@@ -258,15 +248,16 @@ export const handleConnection = (
 
 			if (player) {
 				const username = player.username;
-				console.log("username ", username);
-				console.log("playerPoints ", playerPoints);
 
-				// if (username) {
-				// 	await createHighscore(username, playerHighscore);
-				// }
+				await prisma.player.update({
+					where: {
+						id: player.id,
+					},
+					data: {
+						score: playerPoints,
+					},
+				});			
 
-				// console.log("playerId", playerId);
-				console.log("points", points);
 				const gameId = socketToGameMap[socket.id];
 				if (gameId) {
 					io.to(gameId).emit(
@@ -276,10 +267,10 @@ export const handleConnection = (
 						);
 					}
 				}
-		}
-	};
+			}
+		};
 
-	// handling a virus hit from a client
+	    // handling a virus hit from a client
 		socket.on("virusClick", async ({ elapsedTime }) => {
 			const playerId: string = socket.id;
 			const gameId = socketToGameMap[socket.id];
@@ -291,18 +282,13 @@ export const handleConnection = (
 				);
 			}
 			if (!gameId || !gameStateMap[gameId]) {
-				console.error("Game ID not found for socket:", socket.id);
 				return; // Handle this error as appropriate
 			}
-			console.log(
-				`Current Round: ${gameStateMap[gameId].currentRound}`
-			);
 
 			if (!reactionTimes[playerId]) {
 				reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
 			}
 			(reactionTimes[playerId] as number[]).push(elapsedTime);
-			console.log("reactionTimes", reactionTimes);
 
 			const playerIds = Object.keys(reactionTimes);
 
@@ -315,20 +301,11 @@ export const handleConnection = (
 					// Call highscoreCalc for each player
 					highscoreCalc(playerId, reactionTimes);
 				}
-			} else {
-				console.log(
-					"Inte tillräckligt med reaktionstider för att beräkna highscore."
-				);
 			}
 			clicksInRound++;
 			if (clicksInRound === 2) {
-				// player on reactiontimes and player one socket.id, player two reaction times and player two socket.id OSV!
-				// behöver ta emot allas playerId
-				// använd gameId
 
 				const players = await findPlayersInGame(gameId);
-				console.log("Player 1 in game: ", players?.players[0].id);
-				console.log("Player 2 in game: ", players?.players[1].id);
 
 				if (players) {
 					const player1 = players.players[0].id;
@@ -338,9 +315,7 @@ export const handleConnection = (
 				}
 
 				clicksInRound = 0;
-				//currentRound++;
 				if (gameStateMap[gameId].currentRound >= maxRounds) {
-					console.log("Triggering Game Over");
 					gameStateMap[gameId].currentRound = 0;
 					io.to(gameId).emit("gameOver");
 				} else {
@@ -349,6 +324,25 @@ export const handleConnection = (
 				}
 			}
 		});
+
+	socket.on("pastGames", async (callback) => {
+		const allGames = await prisma.game.findMany({
+			take: 10,
+			orderBy: {
+				createdAt: "desc",
+			},
+			include: {
+				players: {
+					select: {
+						username: true,
+						score: true,
+					},
+				},
+			},
+		});
+
+		callback(allGames[0].players);
+	});
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();

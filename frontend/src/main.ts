@@ -3,7 +3,6 @@ import {
   ClientToServerEvents,
   RoomCreatedEvent,
   ServerToClientEvents,
-  WaitingForPlayersEvent,
 } from "@shared/types/SocketTypes";
 import "./assets/scss/style.scss";
 
@@ -53,6 +52,9 @@ const player2TimerEl = document.querySelector(
 const highscoreChartEl = document.querySelector(
   ".highscoreChart"
 ) as HTMLUListElement;
+const gamesEl = document.querySelector(
+  ".games"
+) as HTMLUListElement;
 
 // Connect to Socket.IO Server
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
@@ -80,34 +82,17 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
 
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer1);
-
-    const reactiontime = currentTime - startTime;
-
-    // Display result for active player
-    if (timerElement === player1TimerEl) {
-      console.log("Result for player 1: ", reactiontime);
-    } else {
-      console.log("Result for player 2: ", reactiontime);
-    }
   }
 };
 
-const startTimer = (username: string, playerNumber: string) => {
-  console.log("startTimer: ", username);
-
-  //startTimePlayer2 = Date.now();
-
+const startTimer = (playerNumber: string) => {
   if (playerNumber === socket.id) {
     startTimePlayer = Date.now();
     timerIntervalPlayer1 = setInterval(
       () => timer(player1TimerEl, startTimePlayer),
       100
     );
-  } /* else {
-    startTimePlayer2 = Date.now();
-    timerIntervalPlayer2 = setInterval(() => 
-    timer(player2TimerEl, startTimePlayer2), 100);
-  } */
+  }
 };
 
 const stopTimer = (playerNumber: string) => {
@@ -120,10 +105,8 @@ const stopTimer = (playerNumber: string) => {
       playerId: socket.id,
       elapsedTime: elapsedTime,
     });
-    // player2TimerEl.innerHTML = `${elapsedTime}`;
   } else {
     clearInterval(timerIntervalPlayer2);
-    // player1TimerEl.innerHTML = `${secoundPlayerElaspsedTime}`;
   }
 };
 
@@ -195,17 +178,14 @@ socket.io.on("reconnect", () => {
 });
 
 socket.on("gameScore", (socketId: string, playerPoints: number) => {
-
    if (socketId !== socket.id) {
     player2pEl.innerHTML = `Points: ${playerPoints}`;
   } else {
     player1pEl.innerHTML = `Points: ${playerPoints}`;
    }
-  console.log("Points, playerId:", playerPoints, socketId);
 });
 
 socket.emit("highscore", (highscores) => {
-  // console.log("highscores", highscores);
   highscoreChartEl.innerHTML = highscores
     .slice(0, 5)
     .map(
@@ -214,9 +194,15 @@ socket.emit("highscore", (highscores) => {
     .join("");
 });
 
-socket.on("playerLeft", (username) => {
-  console.log("A user has left the game: ", username);
+socket.emit("pastGames", (pastGames) => {
+  gamesEl.innerHTML = pastGames
+    .map(
+      (game) => `<li>${game.username}: ${game.score !== null ? game.score : 'No score'}</li>`
+    )
+    .join("");
+});
 
+socket.on("playerLeft", () => {
   showDisconnect();
 });
 
@@ -262,14 +248,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   showWaitingRoom();
 
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
-    console.log(
-      "Room created: ",
-      event.gameId,
-      "With players: ",
-      event.players
-    );
-
-
+   
     const opponent = event.players.find(
       (player) => player.username !== username
     )?.username;
@@ -283,8 +262,7 @@ startPageFormEl.addEventListener("submit", (e) => {
 
   });
 
-  socket.on("waitingForPlayer", (event: WaitingForPlayersEvent) => {
-    console.log(event.message);
+  socket.on("waitingForPlayer", () => {
   });
 });
 
@@ -300,8 +278,6 @@ socket.on("countdown", (seconds) => {
 socket.on("startGame", () => {
   countdownPageEl.style.display = "none";
   gameFieldEl.style.display = "flex";
-
-  console.log("Game started!");
 });
 
 socket.on("opponentReactionTime", (playerId: string, elapsedTime: number) => {
@@ -310,12 +286,9 @@ socket.on("opponentReactionTime", (playerId: string, elapsedTime: number) => {
     const milliseconds = elapsedTime % 1000;
     player2TimerEl.innerText = `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
   }
-  console.log("Detta är elapsedTime från Opponent: ", playerId, elapsedTime);
-})
+});
 
 socket.on("virusLogic", (position, delay) => {
-  console.log(`in viruslogic 🐣New virus position: ${position}`);
-
   // Remove "virus" class from all grid items
   setTimeout(() => {
     gridItems.forEach((item) => {
@@ -331,7 +304,7 @@ socket.on("virusLogic", (position, delay) => {
     ) {
       gridItems[newPosition].classList.add("virus");
       if (socket.id && username) {
-        startTimer(username, socket.id);
+        startTimer(socket.id);
       }
     }
   }, delay);
@@ -345,7 +318,6 @@ gridItems.forEach((gridItem) => {
       gridItem.classList.remove("virus");
       if (username && socket.id) {
         stopTimer(socket.id);
-        console.log("User som klickade", username, "socketId:", socket.id);
       }
     }
   });

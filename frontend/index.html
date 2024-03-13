@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="https://fav.farm/😎" />
-    <!-- <link rel="stylesheet" href="/src/assets/scss/style.scss"> -->
     <link rel="stylesheet" href="src/assets/css/style.css" />
     <title>FED23 API-utveckling Realtime Frontend</title>
   </head>
@@ -27,19 +26,13 @@
         <div class="highScore">
           <h2>Highscore</h2>
           <ul class="highscoreChart">
-            <!-- <li>Player 1: 1000</li>
-            <li>Player 2: 7003</li>
-            <li>Player 3: 5066</li> -->
           </ul>
         </div>
 
         <!-- Past games -->
         <div class="pastGames">
           <h2>Past games</h2>
-          <ul>
-            <li>Fanny: 3 p – Anna: 5 p</li>
-            <li>Linnea: 3 p – Mattea: 5 p</li>
-            <li>Ellinor: 3 p – Elin: 5 p</li>
+          <ul class="games">
           </ul>
         </div>
       </div>
@@ -53,26 +46,13 @@
     </section>
 
     <!-- Game page -->
-
     <section id="gamePage" class="hide">
-      <!-- Timer -->
-      <!-- <div class="time hide">
-        <h2>Timer: 00:15:468</h2>
-      </div>
-
-      <div class="time hide">
-        <h2>Waiting for player to join</h2>
-      </div> -->
-
-      <!-- temporary start game button-->
-      <!-- <button class="start-game">Start game</button> -->
-      <!-- countdown-page -->
       <div id="countdownPage" style="display: none">
         <h1 id="countdownTimer"></h1>
       </div>
       <div class="game-field" style="display: none">
-        <!-- game field-->
 
+        <!-- game field-->
         <div class="grid-container">
           <div class="grid-item"></div>
           <div class="grid-item"></div>
@@ -108,7 +88,6 @@
             <h4 id="player1p"></h4>
             <p id="player1Timer"></p>
             <p id="player1Reactiontime"></p>
-            <!-- <h4 class="timer"></h4> -->
             <h4 class="highscore"></h4>
           </div>
           <div class="scorePlayer2">
@@ -117,8 +96,6 @@
             <p id="player2Timer"></p>
             <p id="player2Reactiontime"></p>
           </div>
-          <!-- <button class="startTimer">Start Timer</button>
-          <button class="stopTimer">Stop Timer</button> -->
         </div>
       </div>
     </section>
