@@ -256,7 +256,7 @@ export const handleConnection = (
 					data: {
 						score: playerPoints,
 					},
-				});			
+				});
 
 				const gameId = socketToGameMap[socket.id];
 				if (gameId) {
