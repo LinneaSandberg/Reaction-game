@@ -196,8 +196,12 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
+socket.on("gameScore", (points) => {
+  console.log("Points:", points);
+});
+
 socket.emit("highscore", (highscores) => {
-  console.log("highscores", highscores);
+  // console.log("highscores", highscores);
   highscoreChartEl.innerHTML = highscores
     .slice(0, 5)
     .map(

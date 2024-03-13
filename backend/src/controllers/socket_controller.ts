@@ -149,7 +149,10 @@ export const handleConnection = (
 				gameStateMap[gameId].currentRound++;
 				gameStateMap[gameId].clicksInRound = 0; // Reset for new round
 				gameStateMap[gameId].virusActive = true; // Ensure virus is active for new round
-				console.log("📌New round from startRound in socket controller", gameStateMap[gameId].clicksInRound );
+				console.log(
+					"📌New round from startRound in socket controller",
+					gameStateMap[gameId].clicksInRound
+				);
 			}
 			const newVirusDelay = virusDelay();
 			const newVirusPosition = virusPosition();
@@ -179,8 +182,12 @@ export const handleConnection = (
 			const playerId: string = socket.id;
 			const gameId = socketToGameMap[socket.id];
 			if (gameId) {
-				io.to(gameId).emit("opponentReactionTime",playerId,  elapsedTime);
-			  }
+				io.to(gameId).emit(
+					"opponentReactionTime",
+					playerId,
+					elapsedTime
+				);
+			}
 			if (!gameId || !gameStateMap[gameId]) {
 				console.error("Game ID not found for socket:", socket.id);
 				return; // Handle this error as appropriate
@@ -199,11 +206,10 @@ export const handleConnection = (
 			console.log("reactionTimes", reactionTimes);
 
 			const playerIds = Object.keys(reactionTimes);
+
 			const allPlayersHaveEnoughEntries = playerIds.every(
 				(id) => reactionTimes[id].length >= 10
 			);
-
-			calculatePoints(playerId, reactionTimes, maxRounds);
 
 			if (allPlayersHaveEnoughEntries) {
 				for (const playerId of playerIds) {
@@ -217,6 +223,8 @@ export const handleConnection = (
 			}
 			clicksInRound++;
 			if (clicksInRound === 2) {
+				calculatePoints(playerId, reactionTimes, maxRounds);
+
 				clicksInRound = 0;
 				//currentRound++;
 				//console.log("currentRound", currentRound);
@@ -274,46 +282,59 @@ export const handleConnection = (
 				}
 			}
 		};
-	});
+		// const points: Record<string, number> = {};
 
-	const points: Record<string, number> = {};
+		const calculatePoints = async (
+			playerId: string,
+			reactionTimes: ReactionTimes,
+			maxRounds: number
+		) => {
+			const points: Record<string, number> = {};
 
-	const calculatePoints = (
-		playerId: string,
-		reactionTimes: ReactionTimes,
-		maxRounds: number
-	) => {
-		for (let round = 0; round < 3; round++) {
-			let fastestTime = Infinity;
-			let fastestPlayerId = "";
+			for (let round = 0; round < maxRounds; round++) {
+				let fastestTime = Infinity;
+				let fastestPlayerId = "";
 
-			for (const playerId in reactionTimes) {
-				const playerTimes = reactionTimes[playerId];
+				for (const id in reactionTimes) {
+					const playerTimes = reactionTimes[id];
 
-				if (
-					playerTimes.length > round &&
-					playerTimes[round] < fastestTime
-				) {
-					fastestTime = playerTimes[round];
-					fastestPlayerId = playerId;
+					if (
+						playerTimes.length > round &&
+						playerTimes[round] < fastestTime
+					) {
+						fastestTime = playerTimes[round];
+						fastestPlayerId = id;
+					}
+				}
+
+				if (fastestPlayerId) {
+					if (!points[fastestPlayerId]) {
+						points[fastestPlayerId] = 0;
+					}
+
+					points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
 				}
 			}
 
-			if (fastestPlayerId) {
-				if (!points[fastestPlayerId]) {
-					points[fastestPlayerId] = 0;
+			for (const [playerId, playerPoints] of Object.entries(points)) {
+				const player = await getPlayer(playerId);
+
+				if (player) {
+					const username = player.username;
+					console.log("username ", username);
+					console.log("playerPoints ", playerPoints);
+
+					// if (username) {
+					// 	await createHighscore(username, playerHighscore);
+					// }
 				}
-
-				points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
 			}
-		}
-		console.log("playerId", playerId);
-		console.log("points", points);
-		return points;
-	};
+			console.log("playerId", playerId);
+			console.log("points", points);
+			io.emit("gameScore", points);
 
-	socket.on("gameScore", (callback) => {
-		callback(points);
+			return points;
+		};
 	});
 
 	socket.on("highscore", async (callback) => {
