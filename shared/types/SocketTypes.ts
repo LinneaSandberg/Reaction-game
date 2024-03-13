@@ -1,4 +1,4 @@
-import { Game, GameResults, Highscore, PastGames, Player, Room, VirusDelay } from "./Models";
+import { Game, GameResults, Highscore, Player, Room, VirusDelay } from "./Models";
 export {};
 
 // Events emitted by the server to the client
@@ -15,7 +15,6 @@ export interface ServerToClientEvents {
   gameScore: (socketId: string, playerPoints: number) => void;
   opponentReactionTime: (playerId: string, elapsedTime: number) => void;
   pastGames: (gameResults: GameResults) => void;
-
 }
 
 // Events emitted by the client to the server
