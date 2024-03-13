@@ -36,7 +36,11 @@ let virusStartTime: number;
 let socketToGameMap: Record<string, string> = {};
 let gameStateMap: Record<
 	string,
-	{ currentRound: number; clicksInRound: number; virusActive: boolean }
+	{
+		currentRound: number;
+		clicksInRound: number;
+		virusActive: boolean;
+	}
 > = {};
 
 export const handleConnection = (
@@ -252,7 +256,7 @@ export const handleConnection = (
 					data: {
 						score: playerPoints,
 					},
-				});			
+				});
 
 				const gameId = socketToGameMap[socket.id];
 				if (gameId) {

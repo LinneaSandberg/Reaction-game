@@ -259,6 +259,7 @@ startPageFormEl.addEventListener("submit", (e) => {
     if (username && opponent) {
       usernamesDisplay(username, opponent);
     }
+
   });
 
   socket.on("waitingForPlayer", () => {
@@ -322,15 +323,37 @@ gridItems.forEach((gridItem) => {
   });
 });
 
-socket.on("gameOver", () => {
-  gameFieldEl.style.display = "none";
-  gameOverPageEl.classList.remove("hide");
-  document.querySelector("#play-again")?.addEventListener("click", () => {
-    gameOverPageEl.classList.add("hide");
-    player1TimerEl.innerText = `00:000`;
-    player2TimerEl.innerText = `00:000`;
-    player1pEl.innerHTML = `Points: 0`;
-    player2pEl.innerHTML = `Points: 0`;
-    startPageEl.classList.remove("hide");
-  });
+let playerScores: Record<string, number> = {};
+
+socket.on("gameScore", (playerId, points) => {
+  console.log(`Player ID: ${playerId} scored ${points} points`);
+
+  playerScores[playerId] = points;
+
+  const currentPlayerId = socket.id;
+  
+  const playerOnePoints = document.querySelector("#player-one-points") as HTMLParagraphElement;
+  const playerTwoPonts = document.querySelector("#player-two-points") as HTMLParagraphElement;
+
+  if (playerId === currentPlayerId) {
+    playerOnePoints.innerHTML = `${username} ${points}`;
+  } else {
+    playerTwoPonts.innerHTML = `Frenemy: ${points}`;
+  }
 });
+  
+  socket.on("gameOver", () => {
+	console.log("Spelet är över!");
+	gameFieldEl.style.display = "none";
+	gameOverPageEl.classList.remove("hide");
+  
+	document.querySelector("#play-again")?.addEventListener("click", () => {
+	  gameOverPageEl.classList.add("hide");
+	  player1TimerEl.innerText = `00:000`;
+	  player2TimerEl.innerText = `00:000`;
+	  player1pEl.innerHTML = `Points: 0`;
+	  player2pEl.innerHTML = `Points: 0`;
+	  startPageEl.classList.remove("hide");
+	});
+  });
+  

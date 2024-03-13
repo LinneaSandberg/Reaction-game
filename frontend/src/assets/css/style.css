@@ -24,6 +24,7 @@ li {
 }
 
 .startPageTitle1 {
+  animation: blink 2s linear 3;
   text-align: center;
   font-size: 70px;
 }
@@ -165,7 +166,16 @@ li {
   align-items: center;
 }
 
+@keyframes blink {
+  0%, 100% { color: yellowgreen; }
+  20% { color: red; }
+  40% { color: blue; }
+  60% { color: orange; }
+  80% { color: purple; }
+}
+
 #game-over-page {
+  animation: blink 2s linear 3;
   position: fixed;
   top: 30%;
   left: 0;
@@ -179,6 +189,9 @@ li {
 
 #game-over-page h1 {
   font-size: 5rem;
+}
+#final-score-list{
+  font-size: 2rem;
 }
 
 .hide {
