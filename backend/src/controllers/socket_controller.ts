@@ -16,7 +16,6 @@ import {
 	createHighscore,
 	getAllHighscores,
 } from "../services/HighscoreService";
-import { stringify } from "querystring";
 
 const debug = Debug("backend:socket_controller");
 
