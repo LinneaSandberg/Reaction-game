@@ -12,7 +12,7 @@ export interface ServerToClientEvents {
   startGame: () => void;
   virusHitConfirmed: () => void;
   gameOver: () => void;
-  gameScore: (points: Points) => void;
+  gameScore: (socketId: string, playerPoints: number) => void;
   opponentReactionTime: (playerId: string, elapsedTime: number) => void;
 }
 

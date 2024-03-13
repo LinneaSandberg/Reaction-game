@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
+  Points,
   RoomCreatedEvent,
   ServerToClientEvents,
   WaitingForPlayersEvent,
@@ -42,8 +43,8 @@ const startNewGameFormEl = document.querySelector(
 ) as HTMLFormElement;
 
 // Result display
-// const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
-// const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player1TimerEl = document.querySelector(
   "#player1Timer"
 ) as HTMLParagraphElement;
@@ -196,8 +197,14 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-socket.on("gameScore", (points) => {
-  console.log("Points:", points);
+socket.on("gameScore", (socketId: string, playerPoints: number) => {
+
+   if (socketId !== socket.id) {
+    player1pEl.innerHTML = `Points: ${playerPoints}`;
+  } else {
+     player2pEl.innerHTML = `Points: ${playerPoints}`;
+   }
+  console.log("Points, playerId:", playerPoints, socketId);
 });
 
 socket.emit("highscore", (highscores) => {

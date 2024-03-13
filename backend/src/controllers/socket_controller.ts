@@ -327,13 +327,23 @@ export const handleConnection = (
 					// if (username) {
 					// 	await createHighscore(username, playerHighscore);
 					// }
-				}
-			}
-			console.log("playerId", playerId);
-			console.log("points", points);
-			io.emit("gameScore", points);
 
-			return points;
+					console.log("playerId", playerId);
+					console.log("points", points);
+					// io.emit("gameScore", points);
+					const sokcetId: string = socket.id;
+					const gameId = socketToGameMap[socket.id];
+					if (gameId) {
+						io.to(gameId).emit(
+							"gameScore",
+							sokcetId,
+							playerPoints
+							);
+						}
+					}
+			}
+
+			// return points;
 		};
 	});
 
