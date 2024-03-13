@@ -18,7 +18,6 @@ model Player {
 model Game {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   players     Player[]
-  winnerId    String?
   createdAt   DateTime  @default(now())
   completedAt DateTime?
 }

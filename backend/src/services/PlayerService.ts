@@ -1,7 +1,6 @@
 /**
  * Service for player
  */
-import { Player } from "@prisma/client";
 import prisma from "../prisma"
 
 export const getPlayer = (playerId: string) => {

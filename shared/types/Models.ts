@@ -25,8 +25,6 @@ export interface PastGames {
   score: number | null; 
 }
 
-export type GameResults = PastGames[];
-
 export interface VirusPosition {
   position: number;
 }
@@ -38,10 +36,4 @@ export interface VirusDelay {
 export type StartGame = {
   virusPosition: number;
   virusDelay: number;
-};
-
-export interface Match {
-  id: string;
-  createdAt: Date;
-  players: Player[];
 }
