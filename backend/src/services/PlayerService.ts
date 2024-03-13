@@ -1,6 +1,7 @@
 /**
  * Service for player
  */
+import { Player } from "@prisma/client";
 import prisma from "../prisma"
 
 export const getPlayer = (playerId: string) => {
@@ -27,6 +28,21 @@ export const findPlayer = (gameId: string) => {
         },
         include: {
             players: true,
+        },
+    });
+}
+
+export const findPlayersInGame = (gameId: string) => {
+    return prisma.game.findUnique({
+        where: {
+            id: gameId,
+        },
+        include: {
+            players: {
+                select: {
+                    id: true,
+                },
+            },
         },
     });
 }

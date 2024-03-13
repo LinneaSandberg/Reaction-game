@@ -42,8 +42,8 @@ const startNewGameFormEl = document.querySelector(
 ) as HTMLFormElement;
 
 // Result display
-// const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
-// const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
+const player1pEl = document.querySelector("#player1p") as HTMLParagraphElement;
+const player2pEl = document.querySelector("#player2p") as HTMLParagraphElement;
 const player1TimerEl = document.querySelector(
   "#player1Timer"
 ) as HTMLParagraphElement;
@@ -84,14 +84,13 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer);
 
-    const reationtime = currentTime - startTime;
-    console.log("roomId: ", roomId, "Player reaction Time: ", reationtime);
+    const reactiontime = currentTime - startTime;
 
     // Display result for active player
     if (timerElement === player1TimerEl) {
-      console.log("Result for player 1: ", reationtime);
+      console.log("Result for player 1: ", reactiontime);
     } else {
-      console.log("Result for player 2: ", reationtime);
+      console.log("Result for player 2: ", reactiontime);
     }
   }
 };
@@ -215,8 +214,14 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-socket.on("gameScore", (points) => {
-  console.log("Points:", points);
+socket.on("gameScore", (socketId: string, playerPoints: number) => {
+
+   if (socketId !== socket.id) {
+    player1pEl.innerHTML = `Points: ${playerPoints}`;
+  } else {
+     player2pEl.innerHTML = `Points: ${playerPoints}`;
+   }
+  console.log("Points, playerId:", playerPoints, socketId);
 });
 
 socket.emit("highscore", (highscores) => {
@@ -240,6 +245,10 @@ if (startNewGameFormEl) {
     e.preventDefault();
 
     showWaitingRoom();
+
+    if (username) {
+      socket.emit("playerJoinRequest", username);
+    }
   });
 }
 
@@ -262,7 +271,7 @@ startPageFormEl.addEventListener("submit", (e) => {
   username = trimmedUsername;
 
   // Emit `playerJoinRequest`-event to the server and wait for acknowledgement
-  socket.emit("playerJoinRequest", username, roomId);
+  socket.emit("playerJoinRequest", username);
 
   // function to display the waiting-lobby
   showWaitingRoom();
@@ -363,5 +372,6 @@ socket.on("gameOver", () => {
     gameOverPageEl.classList.add("hide");
     startPageEl.classList.remove("hide");
   });
+  
   // Visa resultat, erbjuda att starta nytt spel...
 });
