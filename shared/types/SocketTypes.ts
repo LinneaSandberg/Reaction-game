@@ -13,6 +13,7 @@ export interface ServerToClientEvents {
   virusHitConfirmed: () => void;
   gameOver: () => void;
   gameScore: (socketId: string, playerPoints: number) => void;
+  scores: (player1Score: number, player2Score: number) => void;
   opponentReactionTime: (playerId: string, elapsedTime: number) => void;
 }
 
@@ -24,7 +25,6 @@ export interface ClientToServerEvents {
   virusClick: (event: stopTimerEvent) => void;
   gameScore: () => void;
   pastGames: (callback: (games: PastGames[]) => void) => void;
-
 }
 
 export interface GameInfo extends Game {

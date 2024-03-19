@@ -52,9 +52,7 @@ const player2TimerEl = document.querySelector(
 const highscoreChartEl = document.querySelector(
   ".highscoreChart"
 ) as HTMLUListElement;
-const gamesEl = document.querySelector(
-  ".games"
-) as HTMLUListElement;
+const gamesEl = document.querySelector(".games") as HTMLUListElement;
 
 // Connect to Socket.IO Server
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
@@ -124,11 +122,10 @@ const showGameRoom = () => {
 
 // Show player that the other player left
 const showDisconnect = () => {
-
   // startPageEl.classList.add("hide");
   gamePageEl.classList.add("hide");
   displayBoxEl.classList.remove("hide");
-  
+
   // create a DIV element
   const displayEl = document.createElement("div");
 
@@ -177,13 +174,24 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-socket.on("gameScore", (socketId: string, playerPoints: number) => {
-   if (socketId !== socket.id) {
-    player2pEl.innerHTML = `Points: ${playerPoints}`;
-  } else {
-    player1pEl.innerHTML = `Points: ${playerPoints}`;
-   }
-});
+// socket.on("gameScore", (socketId: string, playerPoints: number) => {
+//    if (socketId !== socket.id) {
+//     player2pEl.innerHTML = `Points: ${playerPoints}`;
+//   } else {
+//     player1pEl.innerHTML = `Points: ${playerPoints}`;
+//    }
+// });
+
+socket.on(
+  "scores",
+  (playerId: string, player1Score: number, player2Score: number) => {
+    if (playerId === socket.id) {
+      player2pEl.innerHTML = `Points: ${player1Score}`;
+    } else {
+      player1pEl.innerHTML = `Points: ${player2Score}`;
+    }
+  }
+);
 
 socket.emit("highscore", (highscores) => {
   highscoreChartEl.innerHTML = highscores
@@ -197,7 +205,10 @@ socket.emit("highscore", (highscores) => {
 socket.emit("pastGames", (pastGames) => {
   gamesEl.innerHTML = pastGames
     .map(
-      (game) => `<li>${game.username}: ${game.score !== null ? game.score : 'No score'}</li>`
+      (game) =>
+        `<li>${game.username}: ${
+          game.score !== null ? game.score : "No score"
+        }</li>`
     )
     .join("");
 });
@@ -248,7 +259,6 @@ startPageFormEl.addEventListener("submit", (e) => {
   showWaitingRoom();
 
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
-   
     const opponent = event.players.find(
       (player) => player.username !== username
     )?.username;
@@ -259,11 +269,9 @@ startPageFormEl.addEventListener("submit", (e) => {
     if (username && opponent) {
       usernamesDisplay(username, opponent);
     }
-
   });
 
-  socket.on("waitingForPlayer", () => {
-  });
+  socket.on("waitingForPlayer", () => {});
 });
 
 socket.on("countdown", (seconds) => {
@@ -284,7 +292,9 @@ socket.on("opponentReactionTime", (playerId: string, elapsedTime: number) => {
   if (playerId !== socket.id) {
     const seconds = Math.floor(elapsedTime / 1000);
     const milliseconds = elapsedTime % 1000;
-    player2TimerEl.innerText = `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
+    player2TimerEl.innerText = `${seconds
+      .toString()
+      .padStart(2, "0")}:${milliseconds.toString().padStart(3, "0")}`;
   }
 });
 
@@ -313,7 +323,6 @@ socket.on("virusLogic", (position, delay) => {
 //Add event listener to each grid item to remove virus on click.
 gridItems.forEach((gridItem) => {
   gridItem.addEventListener("click", () => {
-
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
       if (username && socket.id) {
@@ -331,9 +340,13 @@ socket.on("gameScore", (playerId, points) => {
   playerScores[playerId] = points;
 
   const currentPlayerId = socket.id;
-  
-  const playerOnePoints = document.querySelector("#player-one-points") as HTMLParagraphElement;
-  const playerTwoPonts = document.querySelector("#player-two-points") as HTMLParagraphElement;
+
+  const playerOnePoints = document.querySelector(
+    "#player-one-points"
+  ) as HTMLParagraphElement;
+  const playerTwoPonts = document.querySelector(
+    "#player-two-points"
+  ) as HTMLParagraphElement;
 
   if (playerId === currentPlayerId) {
     playerOnePoints.innerHTML = `${username} ${points}`;
@@ -341,19 +354,18 @@ socket.on("gameScore", (playerId, points) => {
     playerTwoPonts.innerHTML = `Frenemy: ${points}`;
   }
 });
-  
-  socket.on("gameOver", () => {
-	console.log("Spelet är över!");
-	gameFieldEl.style.display = "none";
-	gameOverPageEl.classList.remove("hide");
-  
-	document.querySelector("#play-again")?.addEventListener("click", () => {
-	  gameOverPageEl.classList.add("hide");
-	  player1TimerEl.innerText = `00:000`;
-	  player2TimerEl.innerText = `00:000`;
-	  player1pEl.innerHTML = `Points: 0`;
-	  player2pEl.innerHTML = `Points: 0`;
-	  startPageEl.classList.remove("hide");
-	});
+
+socket.on("gameOver", () => {
+  console.log("Spelet är över!");
+  gameFieldEl.style.display = "none";
+  gameOverPageEl.classList.remove("hide");
+
+  document.querySelector("#play-again")?.addEventListener("click", () => {
+    gameOverPageEl.classList.add("hide");
+    player1TimerEl.innerText = `00:000`;
+    player2TimerEl.innerText = `00:000`;
+    player1pEl.innerHTML = `Points: 0`;
+    player2pEl.innerHTML = `Points: 0`;
+    startPageEl.classList.remove("hide");
   });
-  
+});
