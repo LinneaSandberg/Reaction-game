@@ -14,6 +14,7 @@ export interface ServerToClientEvents {
   gameOver: () => void;
   gameScore: (socketId: string, playerPoints: number) => void;
   opponentReactionTime: (playerId: string, elapsedTime: number) => void;
+  scoreUpdate: (event: ScoreUpdateEvent) => void;
 }
 
 // Events emitted by the client to the server
@@ -25,6 +26,11 @@ export interface ClientToServerEvents {
   gameScore: () => void;
   pastGames: (callback: (games: PastGames[]) => void) => void;
 
+}
+
+export interface ScoreUpdateEvent {
+  playerId: string;
+  score: number;
 }
 
 export interface GameInfo extends Game {

@@ -43,6 +43,9 @@ let gameStateMap: Record<
 	}
 > = {};
 
+const games = new Map();
+const lastClickedPlayers = new Map();
+
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -208,67 +211,93 @@ export const handleConnection = (
 		}
 	};
 
-	const calculatePoints = async (
-		player1: string,
-		player2: string,
-		reactionTimes: ReactionTimes,
-	) => {
-		const points: Record<string, number> = {};
+	const updateScore = (gameId: string, playerId: string) => {
 
-		const reactionTimesPlayer1 = reactionTimes[player1];
-		const reactionTimesPlayer2 = reactionTimes[player2];
+		if (!games.has(gameId)) {
+			games.set(gameId, new Map());
+			lastClickedPlayers.set(gameId, null);
+		}
 
-		for (let round = 0; round < maxRounds; round++) {
-			let fastestTime = Infinity;
-			let fastestPlayerId = "";
+		const game = games.get(gameId);
 
-			for (const id in reactionTimes) {
-				const playerTimes = reactionTimes[id];
+		const lastClickedPlayer = lastClickedPlayers.get(gameId);
 
-				if (
-					playerTimes.length > round &&
-					playerTimes[round] < fastestTime
-				) {
-					fastestTime = playerTimes[round];
-					fastestPlayerId = id;
-				}
-			}
-
-			if (fastestPlayerId) {
-				if (!points[fastestPlayerId]) {
-					points[fastestPlayerId] = 0;
-				}
-
-				points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
+		if (lastClickedPlayer !== playerId) {
+			if (!game.has(playerId)) {
+				game.set(playerId, 0);
 			}
 		}
 
-		for (const [playerId, playerPoints] of Object.entries(points)) {
-			const player = await getPlayer(playerId);
+		const score = game.get(playerId);
+		game.set(playerId, score + 1);
 
-			if (player) {
-				const username = player.username;
+		lastClickedPlayers.set(gameId, playerId);
 
-				await prisma.player.update({
-					where: {
-						id: player.id,
-					},
-					data: {
-						score: playerPoints,
-					},
-				});
+		io.to(gameId).emit("scoreUpdate", { playerId: socket.id, score: game.get(playerId) });
 
-				const gameId = socketToGameMap[socket.id];
-				if (gameId) {
-					io.to(gameId).emit(
-						"gameScore",
-						player.id,
-						playerPoints
-						);
-					}
-				}
-			}
-		};
+	}
+
+	// const calculatePoints = async (
+	// 	player1: string,
+	// 	player2: string,
+	// 	reactionTimes: ReactionTimes,
+	// ) => {
+	// 	const points: Record<string, number> = {};
+
+	// 	const reactionTimesPlayer1 = reactionTimes[player1];
+	// 	const reactionTimesPlayer2 = reactionTimes[player2];
+
+	// 	for (let round = 0; round < maxRounds; round++) {
+	// 		let fastestTime = Infinity;
+	// 		let fastestPlayerId = "";
+
+	// 		for (const id in reactionTimes) {
+	// 			const playerTimes = reactionTimes[id];
+
+	// 			if (
+	// 				playerTimes.length > round &&
+	// 				playerTimes[round] < fastestTime
+	// 			) {
+	// 				fastestTime = playerTimes[round];
+	// 				fastestPlayerId = id;
+	// 			}
+	// 		}
+
+	// 		if (fastestPlayerId) {
+	// 			if (!points[fastestPlayerId]) {
+	// 				points[fastestPlayerId] = 0;
+	// 			}
+
+	// 			points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
+	// 		}
+	// 	}
+
+	// 	for (const [playerId, playerPoints] of Object.entries(points)) {
+	// 		const player = await getPlayer(playerId);
+
+	// 		if (player) {
+	// 			const username = player.username;
+
+	// 			await prisma.player.update({
+	// 				where: {
+	// 					id: player.id,
+	// 				},
+	// 				data: {
+	// 					score: playerPoints,
+	// 				},
+	// 			});
+
+	// 			const gameId = socketToGameMap[socket.id];
+	// 			if (gameId) {
+	// 				io.to(gameId).emit(
+	// 					"gameScore",
+	// 					player.id,
+	// 					playerPoints
+	// 					);
+	// 				}
+	// 			}
+	// 		}
+	// 	};
 
 	    // handling a virus hit from a client
 		socket.on("virusClick", async ({ elapsedTime }) => {
@@ -302,8 +331,14 @@ export const handleConnection = (
 					highscoreCalc(playerId, reactionTimes);
 				}
 			}
+
+			// updateScore(gameId, playerId);
+
+
 			clicksInRound++;
 			if (clicksInRound === 2) {
+				updateScore(gameId, playerId);
+
 
 				const players = await findPlayersInGame(gameId);
 
@@ -311,7 +346,7 @@ export const handleConnection = (
 					const player1 = players.players[0].id;
 					const player2 = players.players[1].id;
 
-					calculatePoints(player1, player2, reactionTimes);
+					// calculatePoints(player1, player2, reactionTimes);
 				}
 
 				clicksInRound = 0;
@@ -325,24 +360,24 @@ export const handleConnection = (
 			}
 		});
 
-	socket.on("pastGames", async (callback) => {
-		const allGames = await prisma.game.findMany({
-			take: 10,
-			orderBy: {
-				createdAt: "desc",
-			},
-			include: {
-				players: {
-					select: {
-						username: true,
-						score: true,
-					},
-				},
-			},
-		});
+	// socket.on("pastGames", async (callback) => {
+	// 	const allGames = await prisma.game.findMany({
+	// 		take: 10,
+	// 		orderBy: {
+	// 			createdAt: "desc",
+	// 		},
+	// 		include: {
+	// 			players: {
+	// 				select: {
+	// 					username: true,
+	// 					score: true,
+	// 				},
+	// 			},
+	// 		},
+	// 	});
 
-		callback(allGames[0].players);
-	});
+	// 	callback(allGames[0].players);
+	// });
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();
