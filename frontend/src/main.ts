@@ -157,6 +157,14 @@ const usernamesDisplay = (username: string, opponent: string) => {
   player2.innerText = opponent || "Opponent";
 };
 
+const updateScoreUI = (playerId: string, score: number) => {
+  if (playerId !== socket.id) {
+    player1pEl.innerHTML = `Points: ${score}`;
+  } else {
+    player2pEl.innerHTML = `Points: ${score}`;
+  }
+};
+
 // Listen for when connection is established
 socket.on("connect", () => {
   console.log("💥 Connected to the server", SOCKET_HOST);
@@ -182,17 +190,6 @@ socket.io.on("reconnect", () => {
 //    }
 // });
 
-socket.on(
-  "scores",
-  (playerId: string, player1Score: number, player2Score: number) => {
-    if (playerId === socket.id) {
-      player2pEl.innerHTML = `Points: ${player1Score}`;
-    } else {
-      player1pEl.innerHTML = `Points: ${player2Score}`;
-    }
-  }
-);
-
 socket.emit("highscore", (highscores) => {
   highscoreChartEl.innerHTML = highscores
     .slice(0, 5)
@@ -202,15 +199,16 @@ socket.emit("highscore", (highscores) => {
     .join("");
 });
 
-socket.emit("pastGames", (pastGames) => {
-  gamesEl.innerHTML = pastGames
-    .map(
-      (game) =>
-        `<li>${game.username}: ${
-          game.score !== null ? game.score : "No score"
-        }</li>`
-    )
-    .join("");
+// socket.emit("pastGames", (pastGames) => {
+//   gamesEl.innerHTML = pastGames
+//     .map(
+//       (game) => `<li>${game.username}: ${game.score !== null ? game.score : 'No score'}</li>`
+//     )
+//     .join("");
+// });
+
+socket.on("scoreUpdate", ({ playerId, score }) => {
+  updateScoreUI(playerId, score);
 });
 
 socket.on("playerLeft", () => {

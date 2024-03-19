@@ -55,6 +55,9 @@ let gameStateMap: Record<
 	}
 > = {};
 
+const games = new Map();
+const lastClickedPlayers = new Map();
+
 export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
@@ -214,6 +217,33 @@ export const handleConnection = (
 		}
 	};
 
+	const updateScore = (gameId: string, playerId: string) => {
+		if (!games.has(gameId)) {
+			games.set(gameId, new Map());
+			lastClickedPlayers.set(gameId, null);
+		}
+
+		const game = games.get(gameId);
+
+		const lastClickedPlayer = lastClickedPlayers.get(gameId);
+
+		if (lastClickedPlayer !== playerId) {
+			if (!game.has(playerId)) {
+				game.set(playerId, 0);
+			}
+		}
+
+		const score = game.get(playerId);
+		game.set(playerId, score + 1);
+
+		lastClickedPlayers.set(gameId, playerId);
+
+		io.to(gameId).emit("scoreUpdate", {
+			playerId: socket.id,
+			score: game.get(playerId),
+		});
+	};
+
 	// const calculatePoints = async (
 	// 	player1: string,
 	// 	player2: string,
@@ -223,8 +253,6 @@ export const handleConnection = (
 
 	// 	const reactionTimesPlayer1 = reactionTimes[player1];
 	// 	const reactionTimesPlayer2 = reactionTimes[player2];
-	// 	console.log("reactionTimesPlayer1", reactionTimesPlayer1)
-	// 	console.log("reactionTimesPlayer2", reactionTimesPlayer2)
 
 	// 	for (let round = 0; round < maxRounds; round++) {
 	// 		let fastestTime = Infinity;
@@ -278,45 +306,10 @@ export const handleConnection = (
 	// 		}
 	// 	};
 
-	const updateScores = (
-		gameId: string,
-		playerId: string,
-		player1: string,
-		player2: string
-	) => {
-		if (!gameScores[gameId]) {
-			// Om det inte finns någon inspelad poäng för detta spel, skapa nya poängobjekt
-			gameScores[gameId] = { player1Score: 0, player2Score: 0 };
-		}
-
-		// Uppdatera poängen för den angivna spelaren
-		if (playerId === player1) {
-			gameScores[gameId].player1Score++;
-		} else {
-			gameScores[gameId].player2Score++;
-		}
-		console.log(
-			"gameScores[gameId].player1Score",
-			gameScores[gameId].player1Score
-		);
-		console.log(
-			"gameScores[gameId].player2Score",
-			gameScores[gameId].player2Score
-		);
-
-		// Skicka uppdaterade poäng till klienterna
-		io.to(gameId).emit(
-			"scores",
-			playerId,
-			gameScores[gameId].player1Score,
-			gameScores[gameId].player2Score
-		);
-	};
-
+	// handling a virus hit from a client
 	// handling a virus hit from a client
 	socket.on("virusClick", async ({ elapsedTime }) => {
 		const playerId: string = socket.id;
-		// console.log(`player ${playerId} clicked virus`);
 		const gameId = socketToGameMap[socket.id];
 		if (gameId) {
 			io.to(gameId).emit("opponentReactionTime", playerId, elapsedTime);
@@ -342,8 +335,13 @@ export const handleConnection = (
 				highscoreCalc(playerId, reactionTimes);
 			}
 		}
+
+		// updateScore(gameId, playerId);
+
 		clicksInRound++;
 		if (clicksInRound === 2) {
+			updateScore(gameId, playerId);
+
 			const players = await findPlayersInGame(gameId);
 
 			if (players) {
@@ -351,7 +349,6 @@ export const handleConnection = (
 				const player2 = players.players[1].id;
 
 				// calculatePoints(player1, player2, reactionTimes);
-				updateScores(gameId, playerId, player1, player2);
 			}
 
 			clicksInRound = 0;
@@ -365,24 +362,24 @@ export const handleConnection = (
 		}
 	});
 
-	socket.on("pastGames", async (callback) => {
-		const allGames = await prisma.game.findMany({
-			take: 10,
-			orderBy: {
-				createdAt: "desc",
-			},
-			include: {
-				players: {
-					select: {
-						username: true,
-						score: true,
-					},
-				},
-			},
-		});
+	// socket.on("pastGames", async (callback) => {
+	// 	const allGames = await prisma.game.findMany({
+	// 		take: 10,
+	// 		orderBy: {
+	// 			createdAt: "desc",
+	// 		},
+	// 		include: {
+	// 			players: {
+	// 				select: {
+	// 					username: true,
+	// 					score: true,
+	// 				},
+	// 			},
+	// 		},
+	// 	});
 
-		callback(allGames[0].players);
-	});
+	// 	callback(allGames[0].players);
+	// });
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();
