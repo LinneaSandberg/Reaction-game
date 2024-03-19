@@ -260,6 +260,15 @@ export const handleConnection = (
 				// 	await createHighscore(username, playerHighscore);
 				// }
 
+				const playerIds = Object.keys(reactionTimes);
+
+				const matchPoints = playerIds.every(
+					(id) => reactionTimes[id].length >= 10
+				);
+
+				if (matchPoints) {
+				}
+
 				// console.log("playerId", playerId);
 				console.log("points", points);
 				const gameId = socketToGameMap[socket.id];
