@@ -2,6 +2,7 @@ import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
   RoomCreatedEvent,
+  ScoreUpdateEvent,
   ServerToClientEvents,
 } from "@shared/types/SocketTypes";
 import "./assets/scss/style.scss";
@@ -339,20 +340,21 @@ gridItems.forEach((gridItem) => {
 
 let playerScores: Record<string, number> = {};
 
-socket.on("gameScore", (playerId, points) => {
-  console.log(`Player ID: ${playerId} scored ${points} points`);
+socket.on("scoreUpdate", (event: ScoreUpdateEvent) => {
+  console.log(`Player ID: ${event.playerId} scored ${event.score} points`);
 
-  playerScores[playerId] = points;
+  playerScores[event.playerId] = event.score;
 
   const currentPlayerId = socket.id;
   
   const playerOnePoints = document.querySelector("#player-one-points") as HTMLParagraphElement;
-  const playerTwoPonts = document.querySelector("#player-two-points") as HTMLParagraphElement;
+  const playerTwoPoints = document.querySelector("#player-two-points") as HTMLParagraphElement;
 
-  if (playerId === currentPlayerId) {
-    playerOnePoints.innerHTML = `${username} ${points}`;
+  // Antag att `username` är definierad och tillgänglig i det här scopet
+  if (event.playerId === currentPlayerId) {
+    playerOnePoints.innerHTML = `${username} ${event.score}`;
   } else {
-    playerTwoPonts.innerHTML = `Frenemy: ${points}`;
+    playerTwoPoints.innerHTML = `Frenemy: ${event.score}`;
   }
 });
   
