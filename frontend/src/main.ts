@@ -163,6 +163,9 @@ const updateScoreUI = (playerId: string, score: number) => {
   } else {
     player2pEl.innerHTML = `Points: ${score}`;
   }
+
+  console.log("playerId", playerId);
+  console.log("score", score);
 };
 
 // Listen for when connection is established
@@ -195,6 +198,16 @@ socket.emit("highscore", (highscores) => {
     .slice(0, 5)
     .map(
       (highscore) => `<li>${highscore.username}: ${highscore.highscore}</li>`
+    )
+    .join("");
+});
+
+socket.emit("results", (allResults) => {
+  gamesEl.innerHTML = allResults
+    .slice(0, 10)
+    .map(
+      (result) =>
+        `<li>${result.player1} ${result.player1Score} – ${result.player2Score} ${result.player2} </li>`
     )
     .join("");
 });

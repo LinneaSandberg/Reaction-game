@@ -20,6 +20,7 @@ import {
 	createHighscore,
 	getAllHighscores,
 } from "../services/HighscoreService";
+import { createResult, getResults } from "../services/ResultService";
 
 // array of players waiting to play
 const waitingPlayers: WaitingPlayers[] = [];
@@ -217,7 +218,7 @@ export const handleConnection = (
 		}
 	};
 
-	const updateScore = (gameId: string, playerId: string) => {
+	const updateScore = async (gameId: string, playerId: string) => {
 		if (!games.has(gameId)) {
 			games.set(gameId, new Map());
 			lastClickedPlayers.set(gameId, null);
@@ -238,11 +239,52 @@ export const handleConnection = (
 
 		lastClickedPlayers.set(gameId, playerId);
 
+		if (gameStateMap[gameId].currentRound >= maxRounds) {
+			matchResult(game);
+		}
+
 		io.to(gameId).emit("scoreUpdate", {
 			playerId: socket.id,
 			score: game.get(playerId),
 		});
 	};
+
+	const matchResult = async (game: any) => {
+		const playerIds = Array.from(game.keys());
+
+		const playerId1 = playerIds[0] as string;
+		const playerId2 = playerIds[1] as string;
+
+		const player1 = await getPlayer(playerId1);
+		console.log("player1 name: ", player1?.username);
+
+		// if (playerId2 !== undefined) {
+		const player2 = await getPlayer(playerId2);
+		console.log("player2 name: ", player2?.username);
+		// }
+
+		const matchResult = {
+			player1: player2?.username ?? "",
+			player2: player1?.username ?? "",
+			player1Score: 0,
+			player2Score: 0,
+		};
+
+		for (const [playerId, score] of game) {
+			if (playerId === playerId1) {
+				matchResult.player1Score = score;
+			} else if (playerId === playerId2) {
+				matchResult.player2Score = score;
+			}
+		}
+
+		await createResult(matchResult);
+	};
+
+	socket.on("results", async (callback) => {
+		const allResults = await getResults();
+		callback(allResults);
+	});
 
 	// const calculatePoints = async (
 	// 	player1: string,
@@ -307,7 +349,6 @@ export const handleConnection = (
 	// 	};
 
 	// handling a virus hit from a client
-	// handling a virus hit from a client
 	socket.on("virusClick", async ({ elapsedTime }) => {
 		const playerId: string = socket.id;
 		const gameId = socketToGameMap[socket.id];
@@ -340,16 +381,8 @@ export const handleConnection = (
 
 		clicksInRound++;
 		if (clicksInRound === 2) {
-			updateScore(gameId, playerId);
-
 			const players = await findPlayersInGame(gameId);
-
-			if (players) {
-				const player1 = players.players[0].id;
-				const player2 = players.players[1].id;
-
-				// calculatePoints(player1, player2, reactionTimes);
-			}
+			updateScore(gameId, playerId);
 
 			clicksInRound = 0;
 			if (gameStateMap[gameId].currentRound >= maxRounds) {
