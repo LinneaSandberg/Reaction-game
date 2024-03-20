@@ -129,7 +129,7 @@ const showDisconnect = () => {
   // startPageEl.classList.add("hide");
   gamePageEl.classList.add("hide");
   displayBoxEl.classList.remove("hide");
-  
+
   // create a DIV element
   const displayEl = document.createElement("div");
 
@@ -166,8 +166,8 @@ const updateScoreUI = (playerId: string, score: number) => {
     player1pEl.innerHTML = `Points: ${score}`;
   } else {
     player2pEl.innerHTML = `Points: ${score}`;
-   }
-}
+  }
+};
 
 // Listen for when connection is established
 socket.on("connect", () => {
@@ -212,9 +212,7 @@ socket.emit("highscore", (highscores) => {
 // });
 
 socket.on("scoreUpdate", ({ playerId, score }) => {
-
   updateScoreUI(playerId, score);
-  
 });
 
 socket.on("playerLeft", () => {
@@ -263,7 +261,6 @@ startPageFormEl.addEventListener("submit", (e) => {
   showWaitingRoom();
 
   socket.on("roomCreated", (event: RoomCreatedEvent) => {
-   
     const opponent = event.players.find(
       (player) => player.username !== username
     )?.username;
@@ -274,11 +271,9 @@ startPageFormEl.addEventListener("submit", (e) => {
     if (username && opponent) {
       usernamesDisplay(username, opponent);
     }
-
   });
 
-  socket.on("waitingForPlayer", () => {
-  });
+  socket.on("waitingForPlayer", () => {});
 });
 
 socket.on("countdown", (seconds) => {
@@ -299,7 +294,9 @@ socket.on("opponentReactionTime", (playerId: string, elapsedTime: number) => {
   if (playerId !== socket.id) {
     const seconds = Math.floor(elapsedTime / 1000);
     const milliseconds = elapsedTime % 1000;
-    player2TimerEl.innerText = `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(3, '0')}`;
+    player2TimerEl.innerText = `${seconds
+      .toString()
+      .padStart(2, "0")}:${milliseconds.toString().padStart(3, "0")}`;
   }
 });
 
@@ -328,7 +325,6 @@ socket.on("virusLogic", (position, delay) => {
 //Add event listener to each grid item to remove virus on click.
 gridItems.forEach((gridItem) => {
   gridItem.addEventListener("click", () => {
-
     if (gridItem.classList.contains("virus")) {
       gridItem.classList.remove("virus");
       if (username && socket.id) {
@@ -346,9 +342,13 @@ socket.on("scoreUpdate", (event: ScoreUpdateEvent) => {
   playerScores[event.playerId] = event.score;
 
   const currentPlayerId = socket.id;
-  
-  const playerOnePoints = document.querySelector("#player-one-points") as HTMLParagraphElement;
-  const playerTwoPoints = document.querySelector("#player-two-points") as HTMLParagraphElement;
+
+  const playerOnePoints = document.querySelector(
+    "#player-one-points"
+  ) as HTMLParagraphElement;
+  const playerTwoPoints = document.querySelector(
+    "#player-two-points"
+  ) as HTMLParagraphElement;
 
   // Antag att `username` är definierad och tillgänglig i det här scopet
   if (event.playerId === currentPlayerId) {

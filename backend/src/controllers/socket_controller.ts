@@ -10,7 +10,12 @@ import {
 	AverageHighscores,
 } from "@shared/types/SocketTypes";
 import prisma from "../prisma";
-import { deletePlayer, findPlayer, findPlayersInGame, getPlayer } from "../services/PlayerService";
+import {
+	deletePlayer,
+	findPlayer,
+	findPlayersInGame,
+	getPlayer,
+} from "../services/PlayerService";
 import {
 	createHighscore,
 	getAllHighscores,
@@ -33,6 +38,13 @@ const maxRounds = 10;
 let clicksInRound = 0;
 let virusActive = false;
 let virusStartTime: number;
+let player1Score = 0;
+let player2Score = 0;
+const gameScores: Record<
+	string,
+	{ player1Score: number; player2Score: number }
+> = {};
+
 let socketToGameMap: Record<string, string> = {};
 let gameStateMap: Record<
 	string,
@@ -50,7 +62,6 @@ export const handleConnection = (
 	socket: Socket<ClientToServerEvents, ServerToClientEvents>,
 	io: Server<ClientToServerEvents, ServerToClientEvents>
 ) => {
-
 	socket.on("playerJoinRequest", async (username) => {
 		const existingPlayer = await prisma.player.findUnique({
 			where: {
@@ -73,7 +84,7 @@ export const handleConnection = (
 
 		for (const playerId in reactionTimes) {
 			if (reactionTimes.hasOwnProperty(playerId)) {
-			  delete reactionTimes[playerId];
+				delete reactionTimes[playerId];
 			}
 		}
 
@@ -174,10 +185,7 @@ export const handleConnection = (
 		return Math.floor(Math.random() * 9000) + 1000;
 	}
 
-	const highscoreCalc = (
-		playerId: string,
-		reactionTimes: ReactionTimes
-	) => {
+	const highscoreCalc = (playerId: string, reactionTimes: ReactionTimes) => {
 		const averageHighscores: AverageHighscores = {};
 
 		const playerTimes = reactionTimes[playerId];
@@ -196,9 +204,7 @@ export const handleConnection = (
 		playerId: string,
 		highscore: AverageHighscores
 	) => {
-		for (const [playerId, playerHighscore] of Object.entries(
-			highscore
-		)) {
+		for (const [playerId, playerHighscore] of Object.entries(highscore)) {
 			const player = await getPlayer(playerId);
 
 			if (player) {
@@ -212,7 +218,6 @@ export const handleConnection = (
 	};
 
 	const updateScore = (gameId: string, playerId: string) => {
-
 		if (!games.has(gameId)) {
 			games.set(gameId, new Map());
 			lastClickedPlayers.set(gameId, null);
@@ -233,9 +238,11 @@ export const handleConnection = (
 
 		lastClickedPlayers.set(gameId, playerId);
 
-		io.to(gameId).emit("scoreUpdate", { playerId: socket.id, score: game.get(playerId) });
-
-	}
+		io.to(gameId).emit("scoreUpdate", {
+			playerId: socket.id,
+			score: game.get(playerId),
+		});
+	};
 
 	// const calculatePoints = async (
 	// 	player1: string,
@@ -299,66 +306,61 @@ export const handleConnection = (
 	// 		}
 	// 	};
 
-	    // handling a virus hit from a client
-		socket.on("virusClick", async ({ elapsedTime }) => {
-			const playerId: string = socket.id;
-			const gameId = socketToGameMap[socket.id];
-			if (gameId) {
-				io.to(gameId).emit(
-					"opponentReactionTime",
-					playerId,
-					elapsedTime
-				);
+	// handling a virus hit from a client
+	// handling a virus hit from a client
+	socket.on("virusClick", async ({ elapsedTime }) => {
+		const playerId: string = socket.id;
+		const gameId = socketToGameMap[socket.id];
+		if (gameId) {
+			io.to(gameId).emit("opponentReactionTime", playerId, elapsedTime);
+		}
+		if (!gameId || !gameStateMap[gameId]) {
+			return; // Handle this error as appropriate
+		}
+
+		if (!reactionTimes[playerId]) {
+			reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
+		}
+		(reactionTimes[playerId] as number[]).push(elapsedTime);
+
+		const playerIds = Object.keys(reactionTimes);
+
+		const allPlayersHaveEnoughEntries = playerIds.every(
+			(id) => reactionTimes[id].length >= 10
+		);
+
+		if (allPlayersHaveEnoughEntries) {
+			for (const playerId of playerIds) {
+				// Call highscoreCalc for each player
+				highscoreCalc(playerId, reactionTimes);
 			}
-			if (!gameId || !gameStateMap[gameId]) {
-				return; // Handle this error as appropriate
+		}
+
+		// updateScore(gameId, playerId);
+
+		clicksInRound++;
+		if (clicksInRound === 2) {
+			updateScore(gameId, playerId);
+
+			const players = await findPlayersInGame(gameId);
+
+			if (players) {
+				const player1 = players.players[0].id;
+				const player2 = players.players[1].id;
+
+				// calculatePoints(player1, player2, reactionTimes);
 			}
 
-			if (!reactionTimes[playerId]) {
-				reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
+			clicksInRound = 0;
+			if (gameStateMap[gameId].currentRound >= maxRounds) {
+				gameStateMap[gameId].currentRound = 0;
+				io.to(gameId).emit("gameOver");
+			} else {
+				// Proceed to the next round
+				startRound(io, gameId);
 			}
-			(reactionTimes[playerId] as number[]).push(elapsedTime);
-
-			const playerIds = Object.keys(reactionTimes);
-
-			const allPlayersHaveEnoughEntries = playerIds.every(
-				(id) => reactionTimes[id].length >= 10
-			);
-
-			if (allPlayersHaveEnoughEntries) {
-				for (const playerId of playerIds) {
-					// Call highscoreCalc for each player
-					highscoreCalc(playerId, reactionTimes);
-				}
-			}
-
-			// updateScore(gameId, playerId);
-
-
-			clicksInRound++;
-			if (clicksInRound === 2) {
-				updateScore(gameId, playerId);
-
-
-				const players = await findPlayersInGame(gameId);
-
-				if (players) {
-					const player1 = players.players[0].id;
-					const player2 = players.players[1].id;
-
-					// calculatePoints(player1, player2, reactionTimes);
-				}
-
-				clicksInRound = 0;
-				if (gameStateMap[gameId].currentRound >= maxRounds) {
-					gameStateMap[gameId].currentRound = 0;
-					io.to(gameId).emit("gameOver");
-				} else {
-					// Proceed to the next round
-					startRound(io, gameId);
-				}
-			}
-		});
+		}
+	});
 
 	// socket.on("pastGames", async (callback) => {
 	// 	const allGames = await prisma.game.findMany({
@@ -386,7 +388,8 @@ export const handleConnection = (
 
 	// handler for disconnecting
 	socket.on("disconnect", async () => {
-
+		player1Score = 0;
+		player2Score = 0;
 		// Find player to know what room that player was in
 		const player = await getPlayer(socket.id);
 
