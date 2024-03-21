@@ -244,82 +244,20 @@ export const handleConnection = (
 		});
 	};
 
-	// const calculatePoints = async (
-	// 	player1: string,
-	// 	player2: string,
-	// 	reactionTimes: ReactionTimes,
-	// ) => {
-	// 	const points: Record<string, number> = {};
-
-	// 	const reactionTimesPlayer1 = reactionTimes[player1];
-	// 	const reactionTimesPlayer2 = reactionTimes[player2];
-
-	// 	for (let round = 0; round < maxRounds; round++) {
-	// 		let fastestTime = Infinity;
-	// 		let fastestPlayerId = "";
-
-	// 		for (const id in reactionTimes) {
-	// 			const playerTimes = reactionTimes[id];
-
-	// 			if (
-	// 				playerTimes.length > round &&
-	// 				playerTimes[round] < fastestTime
-	// 			) {
-	// 				fastestTime = playerTimes[round];
-	// 				fastestPlayerId = id;
-	// 			}
-	// 		}
-
-	// 		if (fastestPlayerId) {
-	// 			if (!points[fastestPlayerId]) {
-	// 				points[fastestPlayerId] = 0;
-	// 			}
-
-	// 			points[fastestPlayerId] += 1; // Award one point to the player with the fastest reaction time in the current round
-	// 		}
-	// 	}
-
-	// 	for (const [playerId, playerPoints] of Object.entries(points)) {
-	// 		const player = await getPlayer(playerId);
-
-	// 		if (player) {
-	// 			const username = player.username;
-
-	// 			await prisma.player.update({
-	// 				where: {
-	// 					id: player.id,
-	// 				},
-	// 				data: {
-	// 					score: playerPoints,
-	// 				},
-	// 			});
-
-	// 			const gameId = socketToGameMap[socket.id];
-	// 			if (gameId) {
-	// 				io.to(gameId).emit(
-	// 					"gameScore",
-	// 					player.id,
-	// 					playerPoints
-	// 					);
-	// 				}
-	// 			}
-	// 		}
-	// 	};
-
-	// handling a virus hit from a client
 	// handling a virus hit from a client
 	socket.on("virusClick", async ({ elapsedTime }) => {
+		console.log("elapsedTime: ", elapsedTime);
 		const playerId: string = socket.id;
 		const gameId = socketToGameMap[socket.id];
 		if (gameId) {
 			io.to(gameId).emit("opponentReactionTime", playerId, elapsedTime);
 		}
 		if (!gameId || !gameStateMap[gameId]) {
-			return; // Handle this error as appropriate
+			return;
 		}
 
 		if (!reactionTimes[playerId]) {
-			reactionTimes[playerId] = []; // flytta denna rad tll playerjoinrequest innan vi kollar om det finns två spelare
+			reactionTimes[playerId] = [];
 		}
 		(reactionTimes[playerId] as number[]).push(elapsedTime);
 
@@ -336,19 +274,19 @@ export const handleConnection = (
 			}
 		}
 
-		// updateScore(gameId, playerId);
-
 		clicksInRound++;
 		if (clicksInRound === 2) {
-			updateScore(gameId, playerId);
+
+			// kolla så att en har klickat i alla fall isf 
+			if (elapsedTime < 30000) {
+				updateScore(gameId, playerId);
+			}
 
 			const players = await findPlayersInGame(gameId);
 
 			if (players) {
 				const player1 = players.players[0].id;
 				const player2 = players.players[1].id;
-
-				// calculatePoints(player1, player2, reactionTimes);
 			}
 
 			clicksInRound = 0;
@@ -361,25 +299,6 @@ export const handleConnection = (
 			}
 		}
 	});
-
-	// socket.on("pastGames", async (callback) => {
-	// 	const allGames = await prisma.game.findMany({
-	// 		take: 10,
-	// 		orderBy: {
-	// 			createdAt: "desc",
-	// 		},
-	// 		include: {
-	// 			players: {
-	// 				select: {
-	// 					username: true,
-	// 					score: true,
-	// 				},
-	// 			},
-	// 		},
-	// 	});
-
-	// 	callback(allGames[0].players);
-	// });
 
 	socket.on("highscore", async (callback) => {
 		const allHighscores = await getAllHighscores();

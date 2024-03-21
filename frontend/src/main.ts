@@ -85,11 +85,7 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer1);
     if (socket.id) {
-      console.log("virusClick triggad: ");
-      socket.emit("virusClick", {
-        playerId: socket.id,
-        elapsedTime: passedTime,
-      });
+      stopTimer(socket.id);
     }
   }
 };
@@ -109,6 +105,8 @@ const stopTimer = (playerNumber: string) => {
 
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
+
+    console.log("elapsedTime: ", elapsedTime);
 
     socket.emit("virusClick", {
       playerId: socket.id,
@@ -194,14 +192,6 @@ socket.io.on("reconnect", () => {
   console.log("🔗 Socket ID:", socket.id);
 });
 
-// socket.on("gameScore", (socketId: string, playerPoints: number) => {
-//    if (socketId !== socket.id) {
-//     player2pEl.innerHTML = `Points: ${playerPoints}`;
-//   } else {
-//     player1pEl.innerHTML = `Points: ${playerPoints}`;
-//    }
-// });
-
 socket.emit("highscore", (highscores) => {
   highscoreChartEl.innerHTML = highscores
     .slice(0, 5)
@@ -210,14 +200,6 @@ socket.emit("highscore", (highscores) => {
     )
     .join("");
 });
-
-// socket.emit("pastGames", (pastGames) => {
-//   gamesEl.innerHTML = pastGames
-//     .map(
-//       (game) => `<li>${game.username}: ${game.score !== null ? game.score : 'No score'}</li>`
-//     )
-//     .join("");
-// });
 
 socket.on("scoreUpdate", ({ playerId, score }) => {
   updateScoreUI(playerId, score);
