@@ -20,9 +20,12 @@ export interface Highscore {
   highscore: number;
 }
 
-export interface PastGames {
-  username: string;
-  score: number | null; 
+export interface Result {
+  id: string;
+  player1: string;
+  player2: string;
+  player1Score: number;
+  player2Score: number;
 }
 
 export interface VirusPosition {
@@ -36,4 +39,4 @@ export interface VirusDelay {
 export type StartGame = {
   virusPosition: number;
   virusDelay: number;
-}
+};

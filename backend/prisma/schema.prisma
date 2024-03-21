@@ -27,3 +27,12 @@ model HighScore {
   username  String
   highscore Int
 }
+
+model Result {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  player1       String
+  player2       String
+  player1Score  Int
+  player2Score  Int
+  createdAt     DateTime?  @default(now())
+}
