@@ -2,6 +2,7 @@ import { io, Socket } from "socket.io-client";
 import {
   ClientToServerEvents,
   RoomCreatedEvent,
+  ScoreUpdateEvent,
   ServerToClientEvents,
 } from "@shared/types/SocketTypes";
 import "./assets/scss/style.scss";
@@ -52,7 +53,9 @@ const player2TimerEl = document.querySelector(
 const highscoreChartEl = document.querySelector(
   ".highscoreChart"
 ) as HTMLUListElement;
-const gamesEl = document.querySelector(".games") as HTMLUListElement;
+const gamesEl = document.querySelector(
+  ".games"
+) as HTMLUListElement;
 
 // Connect to Socket.IO Server
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
@@ -122,6 +125,7 @@ const showGameRoom = () => {
 
 // Show player that the other player left
 const showDisconnect = () => {
+
   // startPageEl.classList.add("hide");
   gamePageEl.classList.add("hide");
   displayBoxEl.classList.remove("hide");
@@ -345,38 +349,40 @@ gridItems.forEach((gridItem) => {
 
 let playerScores: Record<string, number> = {};
 
-socket.on("gameScore", (playerId, points) => {
-  console.log(`Player ID: ${playerId} scored ${points} points`);
+socket.on("scoreUpdate", (event: ScoreUpdateEvent) => {
+  console.log(`Player ID: ${event.playerId} scored ${event.score} points`);
 
-  playerScores[playerId] = points;
+  playerScores[event.playerId] = event.score;
 
   const currentPlayerId = socket.id;
 
   const playerOnePoints = document.querySelector(
     "#player-one-points"
   ) as HTMLParagraphElement;
-  const playerTwoPonts = document.querySelector(
+  const playerTwoPoints = document.querySelector(
     "#player-two-points"
   ) as HTMLParagraphElement;
 
-  if (playerId === currentPlayerId) {
-    playerOnePoints.innerHTML = `${username} ${points}`;
+  // Antag att `username` är definierad och tillgänglig i det här scopet
+  if (event.playerId === currentPlayerId) {
+    playerOnePoints.innerHTML = `${username} ${event.score}`;
   } else {
-    playerTwoPonts.innerHTML = `Frenemy: ${points}`;
+    playerTwoPoints.innerHTML = `Frenemy: ${event.score}`;
   }
 });
-
-socket.on("gameOver", () => {
-  console.log("Spelet är över!");
-  gameFieldEl.style.display = "none";
-  gameOverPageEl.classList.remove("hide");
-
-  document.querySelector("#play-again")?.addEventListener("click", () => {
-    gameOverPageEl.classList.add("hide");
-    player1TimerEl.innerText = `00:000`;
-    player2TimerEl.innerText = `00:000`;
-    player1pEl.innerHTML = `Points: 0`;
-    player2pEl.innerHTML = `Points: 0`;
-    startPageEl.classList.remove("hide");
+  
+  socket.on("gameOver", () => {
+	console.log("Spelet är över!");
+	gameFieldEl.style.display = "none";
+	gameOverPageEl.classList.remove("hide");
+  
+	document.querySelector("#play-again")?.addEventListener("click", () => {
+	  gameOverPageEl.classList.add("hide");
+	  player1TimerEl.innerText = `00:000`;
+	  player2TimerEl.innerText = `00:000`;
+	  player1pEl.innerHTML = `Points: 0`;
+	  player2pEl.innerHTML = `Points: 0`;
+	  startPageEl.classList.remove("hide");
+	});
   });
-});
+  
