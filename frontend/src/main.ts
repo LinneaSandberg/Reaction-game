@@ -71,6 +71,7 @@ let startTimePlayer: number;
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
   const passedTime = currentTime - startTime;
+  
 
   const seconds = Math.floor((passedTime % 60000) / 1000);
   const milliseconds = passedTime % 1000;
@@ -83,6 +84,13 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
 
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer1);
+    if (socket.id) {
+      console.log("virusClick triggad: ");
+      socket.emit("virusClick", {
+        playerId: socket.id,
+        elapsedTime: passedTime,
+      });
+    }
   }
 };
 
