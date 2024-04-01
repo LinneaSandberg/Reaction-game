@@ -53,9 +53,7 @@ const player2TimerEl = document.querySelector(
 const highscoreChartEl = document.querySelector(
   ".highscoreChart"
 ) as HTMLUListElement;
-const gamesEl = document.querySelector(
-  ".games"
-) as HTMLUListElement;
+const gamesEl = document.querySelector(".games") as HTMLUListElement;
 
 // Connect to Socket.IO Server
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> =
@@ -71,7 +69,6 @@ let startTimePlayer: number;
 const timer = (timerElement: HTMLElement, startTime: number) => {
   const currentTime = Date.now();
   const passedTime = currentTime - startTime;
-  
 
   const seconds = Math.floor((passedTime % 60000) / 1000);
   const milliseconds = passedTime % 1000;
@@ -84,6 +81,8 @@ const timer = (timerElement: HTMLElement, startTime: number) => {
 
   if (seconds >= 30) {
     clearInterval(timerIntervalPlayer1);
+    timerElement.innerHTML = "30:000";
+
     if (socket.id) {
       stopTimer(socket.id);
     }
@@ -131,7 +130,6 @@ const showGameRoom = () => {
 
 // Show player that the other player left
 const showDisconnect = () => {
-
   // startPageEl.classList.add("hide");
   gamePageEl.classList.add("hide");
   displayBoxEl.classList.remove("hide");
@@ -294,6 +292,7 @@ socket.on("startGame", () => {
 });
 
 socket.on("opponentReactionTime", (playerId: string, elapsedTime: number) => {
+  console.log("elapsedtime", elapsedTime);
   if (playerId !== socket.id) {
     const seconds = Math.floor(elapsedTime / 1000);
     const milliseconds = elapsedTime % 1000;
@@ -355,24 +354,23 @@ socket.on("scoreUpdate", (event: ScoreUpdateEvent) => {
 
   // Antag att `username` är definierad och tillgänglig i det här scopet
   if (event.playerId === currentPlayerId) {
-    playerOnePoints.innerHTML = `${username} ${event.score}`;
-  } else {
     playerTwoPoints.innerHTML = `Frenemy: ${event.score}`;
+  } else {
+    playerOnePoints.innerHTML = `${username} ${event.score}`;
   }
 });
-  
-  socket.on("gameOver", () => {
-	console.log("Spelet är över!");
-	gameFieldEl.style.display = "none";
-	gameOverPageEl.classList.remove("hide");
-  
-	document.querySelector("#play-again")?.addEventListener("click", () => {
-	  gameOverPageEl.classList.add("hide");
-	  player1TimerEl.innerText = `00:000`;
-	  player2TimerEl.innerText = `00:000`;
-	  player1pEl.innerHTML = `Points: 0`;
-	  player2pEl.innerHTML = `Points: 0`;
-	  startPageEl.classList.remove("hide");
-	});
+
+socket.on("gameOver", () => {
+  console.log("Spelet är över!");
+  gameFieldEl.style.display = "none";
+  gameOverPageEl.classList.remove("hide");
+
+  document.querySelector("#play-again")?.addEventListener("click", () => {
+    gameOverPageEl.classList.add("hide");
+    player1TimerEl.innerText = `00:000`;
+    player2TimerEl.innerText = `00:000`;
+    player1pEl.innerHTML = `Points: 0`;
+    player2pEl.innerHTML = `Points: 0`;
+    startPageEl.classList.remove("hide");
   });
-  
+});

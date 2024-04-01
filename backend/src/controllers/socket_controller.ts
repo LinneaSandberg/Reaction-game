@@ -318,11 +318,10 @@ export const handleConnection = (
 
 		clicksInRound++;
 		if (clicksInRound === 2) {
-
-			// kolla så att en har klickat i alla fall isf 
-			if (elapsedTime < 30000) {
-				updateScore(gameId, playerId);
-			}
+			// kolla så att en har klickat i alla fall isf
+			// if (elapsedTime < 30000) {
+			updateScore(gameId, playerId);
+			// }
 
 			const players = await findPlayersInGame(gameId);
 
