@@ -319,17 +319,19 @@ export const handleConnection = (
 		clicksInRound++;
 		if (clicksInRound === 2) {
 
-			// kolla så att en har klickat i alla fall isf 
-			if (elapsedTime < 30000) {
+			const atLeastOnePlayerClickedWithinTimeLimit = playerIds.some(id => {
+				const lastReactionTime = reactionTimes[id][reactionTimes[id].length - 1];
+				return lastReactionTime < 30000; // Check if at least one player clicked within 30 seconds
+			});
+			
+			// Update scores only if at least one player clicked within time limit
+			if (atLeastOnePlayerClickedWithinTimeLimit) {
 				updateScore(gameId, playerId);
 			}
 
-			const players = await findPlayersInGame(gameId);
-
-			if (players) {
-				const player1 = players.players[0].id;
-				const player2 = players.players[1].id;
-			}
+			// if (elapsedTime < 30000) {
+				// updateScore(gameId, playerId);
+			// }
 
 			clicksInRound = 0;
 			if (gameStateMap[gameId].currentRound >= maxRounds) {
