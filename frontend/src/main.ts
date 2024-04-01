@@ -105,8 +105,6 @@ const stopTimer = (playerNumber: string) => {
   if (playerNumber === socket.id) {
     clearInterval(timerIntervalPlayer1);
 
-    console.log("elapsedTime: ", elapsedTime);
-
     socket.emit("virusClick", {
       playerId: socket.id,
       elapsedTime: elapsedTime,
@@ -171,9 +169,6 @@ const updateScoreUI = (playerId: string, score: number) => {
   } else {
     player2pEl.innerHTML = `Points: ${score}`;
   }
-
-  console.log("playerId", playerId);
-  console.log("score", score);
 };
 
 // Listen for when connection is established
@@ -339,8 +334,6 @@ gridItems.forEach((gridItem) => {
 let playerScores: Record<string, number> = {};
 
 socket.on("scoreUpdate", (event: ScoreUpdateEvent) => {
-  console.log(`Player ID: ${event.playerId} scored ${event.score} points`);
-
   playerScores[event.playerId] = event.score;
 
   const currentPlayerId = socket.id;
@@ -361,7 +354,6 @@ socket.on("scoreUpdate", (event: ScoreUpdateEvent) => {
 });
 
 socket.on("gameOver", () => {
-  console.log("Spelet är över!");
   gameFieldEl.style.display = "none";
   gameOverPageEl.classList.remove("hide");
 

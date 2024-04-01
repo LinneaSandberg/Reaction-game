@@ -256,12 +256,8 @@ export const handleConnection = (
 		const playerId2 = playerIds[1] as string;
 
 		const player1 = await getPlayer(playerId1);
-		console.log("player1 name: ", player1?.username);
 
-		// if (playerId2 !== undefined) {
 		const player2 = await getPlayer(playerId2);
-		console.log("player2 name: ", player2?.username);
-		// }
 
 		const matchResult = {
 			player1: player2?.username ?? "",
@@ -288,7 +284,6 @@ export const handleConnection = (
 
 	// handling a virus hit from a client
 	socket.on("virusClick", async ({ elapsedTime }) => {
-		console.log("elapsedTime: ", elapsedTime);
 		const playerId: string = socket.id;
 		const gameId = socketToGameMap[socket.id];
 		if (gameId) {
@@ -318,17 +313,20 @@ export const handleConnection = (
 
 		clicksInRound++;
 		if (clicksInRound === 2) {
-			// kolla så att en har klickat i alla fall isf
-			// if (elapsedTime < 30000) {
-			updateScore(gameId, playerId);
-			// }
+			const atLeastOnePlayerClickedWithinTimeLimit = playerIds.some(
+				(id) => {
+					const lastReactionTime =
+						reactionTimes[id][reactionTimes[id].length - 1];
+					return lastReactionTime < 30000; // Check if at least one player clicked within 30 seconds
+				}
+			);
 
-			const players = await findPlayersInGame(gameId);
-
-			if (players) {
-				const player1 = players.players[0].id;
-				const player2 = players.players[1].id;
+			// // Update scores only if at least one player clicked within time limit
+			if (atLeastOnePlayerClickedWithinTimeLimit) {
+				updateScore(gameId, playerId);
 			}
+
+			// updateScore(gameId, playerId);
 
 			clicksInRound = 0;
 			if (gameStateMap[gameId].currentRound >= maxRounds) {
