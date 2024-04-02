@@ -300,6 +300,7 @@ export const handleConnection = (
 		(reactionTimes[playerId] as number[]).push(elapsedTime);
 
 		const playerIds = Object.keys(reactionTimes);
+		console.log("reactionTimes: ", reactionTimes);
 
 		const allPlayersHaveEnoughEntries = playerIds.every(
 			(id) => reactionTimes[id].length >= 10
@@ -315,17 +316,39 @@ export const handleConnection = (
 		clicksInRound++;
 		if (clicksInRound === 2) {
 
-			const atLeastOnePlayerClickedWithinTimeLimit = playerIds.some(id => {
-				const lastReactionTime = reactionTimes[id][reactionTimes[id].length - 1];
-				return lastReactionTime < 30000; // Check if at least one player clicked within 30 seconds
-			});
+			// get current game
+			const gameId = socketToGameMap[socket.id];
+
+			console.log("gameId: ", gameId);
+
+			// get player ids
+			const game = await findPlayersInGame(gameId);
 			
-			// // Update scores only if at least one player clicked within time limit
-			if (atLeastOnePlayerClickedWithinTimeLimit) {
-				updateScore(gameId, playerId);
+			console.log("game: ", game);
+
+			if (!game) {
+				return;
 			}
-	
-				// updateScore(gameId, playerId);
+			const playerIds = game.players.map((player) => player.id);
+
+			console.log("playerIds: ", playerIds);
+
+			const playerId1 = playerIds[0] as string;
+			const playerId2 = playerIds[1] as string;
+
+			const player1time = reactionTimes[playerId1][reactionTimes[playerId1].length - 1];
+			const player2Time = reactionTimes[playerId2][reactionTimes[playerId2].length - 1];
+
+			console.log("player1time: ", player1time);
+			console.log("player2time: ", player2Time);
+		
+		    // Update scores only if at least one player clicked within time limit
+			if (player1time < player2Time && player1time < 30000) {
+				updateScore(gameId, playerId1);
+			} else if (player2Time < player1time && player2Time < 30000) {
+				updateScore(gameId, playerId2);
+			}
+
 
 
 			clicksInRound = 0;

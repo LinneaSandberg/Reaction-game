@@ -110,6 +110,10 @@ const stopTimer = (playerNumber: string) => {
       playerId: socket.id,
       elapsedTime: elapsedTime,
     });
+    console.log("Emitted 'virusClick' event:", {
+      playerId: socket.id,
+      elapsedTime: elapsedTime,
+    });
   } else {
     clearInterval(timerIntervalPlayer2);
   }
